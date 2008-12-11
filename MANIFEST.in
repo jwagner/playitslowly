@@ -1,0 +1,2 @@
+recursive-include share *
+include COPYING install.sh

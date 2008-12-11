@@ -1,0 +1,63 @@
+=====================
+Play it slowly Manual
+=====================
+
+About
+=====
+'Play it slowly' is a tool to help you when transcribing music.
+It allows you to play a piece of music at a different speed or pitch.
+
+Generic Installation
+====================
+To install use you need to have the following libraries installed:
+* Python 2.5
+* PyGTK >= 2.10
+* PyGST >= 0.10
+Normally these libraries are already installed on your system.
+
+To install play it slowly execute: ``python setup.py install`` as 
+superuser (root). If you are using a gnome based system like Ubuntu
+you can just doubleclick ``install.sh`` and select run.
+
+Hacking
+=======
+If you want to change play it slowly, please use the git repository
+and send me either a patch or your repository url afterwards.
+
+$ git clone http://29a.ch/git/playitslowly
+$ hack...
+$ git diff > myfeature.patch
+
+If you have any questions or a patch just drop me a mail.
+
+License
+=======
+Copyright (C) 2008  Jonas Wagner
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+Bugreports / Questions
+======================
+If you encounter any bugs or have suggestions or just want to
+thank me - I would like to hear about it!
+
+Known Issues
+============
+* The pitch gst-plugin used sometimes crashes when changing the pitch while
+  playing.
+
+Contact
+=======
+You can reach my by e-mail: veers at gmx dot ch
