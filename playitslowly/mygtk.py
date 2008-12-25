@@ -1,6 +1,23 @@
 import gtk, gobject
 import sys
 
+buttons_ok_cancel = (gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK)
+class FileChooserDialog(gtk.FileChooserDialog):
+    """a file chooser dialog which automatically sets the correct buttons!"""
+    def __init__(self, action, title=None, parent=None):
+        if action == gtk.FILE_CHOOSER_ACTION_SAVE:
+            buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE ,gtk.RESPONSE_OK)
+            title = title or u"Save File"
+        else:
+            if action == gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER:
+                title = title or u"Select Folder"
+            elif action == gtk.FILE_CHOOSER_ACTION_CREATE_FOLDER:
+                title = title or u"Create Folder"
+            else:
+                title = title or u"Open a File"
+            buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN ,gtk.RESPONSE_OK)
+        gtk.FileChooserDialog.__init__(self, title, parent, action, buttons)
+
 class IconFactory:
     def __init__(self, icon_theme):
         self.cache = {}

@@ -18,7 +18,7 @@ import mygtk
 _ = lambda s: s
 
 NAME = u"Play it slowly"
-VERSION = "0.1"
+VERSION = "1.0"
 WEBSITE = "http://29a.ch/"
 
 TIME_FORMAT = gst.Format(gst.FORMAT_TIME)
@@ -50,13 +50,55 @@ class Pipeline(gst.Pipeline):
             self.eos()
         elif t == gst.MESSAGE_ERROR:
             mygtk.show_error("gstreamer error: %s - %s" % message.parse_error())
-        print "msg", message
+
+    def set_volume(self, volume):
+        self.playbin.set_property("volume", volume)
 
     def set_speed(self, speed):
         self.speedchanger.set_property("tempo", speed)
 
     def set_pitch(self, pitch):
         self.speedchanger.set_property("pitch", pitch)
+
+    def save_file(self, uri):
+        pipeline = gst.Pipeline()
+
+        playbin = gst.element_factory_make("playbin")
+        pipeline.add(playbin)
+        playbin.set_property("uri", self.playbin.get_property("uri"))
+
+        bin = gst.Bin("speed-bin")
+
+        speedchanger = gst.element_factory_make("pitch")
+        speedchanger.set_property("tempo", self.speedchanger.get_property("tempo"))
+        speedchanger.set_property("pitch", self.speedchanger.get_property("pitch"))
+        bin.add(speedchanger)
+
+        audioconvert = gst.element_factory_make("audioconvert")
+        bin.add(audioconvert)
+
+        encoder = gst.element_factory_make("wavenc")
+        bin.add(encoder)
+
+        filesink = gst.element_factory_make("filesink")
+        bin.add(filesink)
+        filesink.set_property("location", uri)
+
+        gst.element_link_many(speedchanger, audioconvert)
+        gst.element_link_many(audioconvert, encoder)
+        gst.element_link_many(encoder, filesink)
+
+        sink_pad = gst.GhostPad("sink", speedchanger.get_pad("sink"))
+        bin.add_pad(sink_pad)
+        playbin.set_property("audio-sink", bin)
+
+        bus = playbin.get_bus()
+        bus.add_signal_watch()
+        bus.connect("message", self.on_message)
+
+        pipeline.set_state(gst.STATE_PLAYING)
+
+        return (pipeline, playbin)
 
     def set_file(self, uri):
         self.playbin.set_property("uri", uri)
@@ -79,13 +121,7 @@ class MainWindow(gtk.Window):
 
         self.pipeline = Pipeline()
 
-        filedialog = gtk.FileChooserDialog(_(u"Select a file"),
-            self, gtk.FILE_CHOOSER_ACTION_OPEN,
-            buttons=(# ugly pygtk problem
-                _("Cancel").encode("utf8"), gtk.RESPONSE_CANCEL,
-                _("Open").encode("utf8"), gtk.RESPONSE_OK
-            )
-        )
+        filedialog = mygtk.FileChooserDialog(gtk.FILE_CHOOSER_ACTION_OPEN, parent=self)
         filedialog.connect("response", self.filechanged)
         self.filechooser = gtk.FileChooserButton(filedialog)
 
@@ -123,10 +159,24 @@ class MainWindow(gtk.Window):
 
         buttonbox = gtk.HButtonBox()
         self.vbox.pack_end(buttonbox, False, False)
+
         self.play_button = gtk.ToggleButton(gtk.STOCK_MEDIA_PLAY)
         self.play_button.connect("toggled", self.play)
         self.play_button.set_use_stock(True)
+        self.play_button.set_sensitive(False)
         buttonbox.pack_start(self.play_button)
+
+        self.volume_button = gtk.VolumeButton()
+        self.volume_button.set_value(1.0)
+        self.volume_button.set_relief(gtk.RELIEF_NORMAL)
+        self.volume_button.connect("value-changed", self.volumechanged)
+        buttonbox.pack_start(self.volume_button)
+
+        self.save_as_button = gtk.Button(stock=gtk.STOCK_SAVE_AS)
+        self.save_as_button.connect("clicked", self.save)
+        self.save_as_button.set_sensitive(False)
+        buttonbox.pack_start(self.save_as_button)
+
         button_about = gtk.Button(stock=gtk.STOCK_ABOUT)
         button_about.connect("clicked", self.about)
         buttonbox.pack_end(button_about)
@@ -134,7 +184,21 @@ class MainWindow(gtk.Window):
         self.add(self.vbox)
         self.connect("destroy", gtk.main_quit)
 
+    def volumechanged(self, sender, foo):
+        self.pipeline.set_volume(sender.get_value())
+
+    def save(self, sender):
+        dialog = mygtk.FileChooserDialog(gtk.FILE_CHOOSER_ACTION_SAVE,
+                u"Save modified version as", self)
+        dialog.set_current_name("export.wav")
+        if dialog.run() == gtk.RESPONSE_OK:
+            self.pipeline.set_file(self.filechooser.get_uri())
+            self.foo = self.pipeline.save_file(dialog.get_filename())
+        dialog.destroy()
+
     def filechanged(self, sender, response_id):
+        self.play_button.set_sensitive(True)
+        self.save_as_button.set_sensitive(True)
         if response_id == gtk.RESPONSE_OK:
             self.play_button.set_active(False)
 
