@@ -114,6 +114,10 @@ class MainWindow(gtk.Window):
         gtk.Window.__init__(self,gtk.WINDOW_TOPLEVEL)
 
         self.set_title(NAME)
+        try:
+            self.set_icon(mygtk.iconfactory.get_icon("playitslowly", 128))
+        except gobject.GError:
+            print "could not load playitslowly icon"
         self.set_default_size(440, 200)
         self.set_border_width(5)
 
