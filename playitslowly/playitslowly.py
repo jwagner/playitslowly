@@ -1,5 +1,26 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8 :
+"""
+Author: Jonas Wagner
+
+Play it slowly
+Copyright (C) 2008 Jonas Wagner
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+import os
 import sys
 
 import gobject
@@ -23,8 +44,11 @@ WEBSITE = "http://29a.ch/"
 
 TIME_FORMAT = gst.Format(gst.FORMAT_TIME)
 
+def in_pathlist(filename, paths = os.environ.get("PATH").split(os.pathsep)):
+    return any(os.path.exists(os.path.join(path, filename)) for path in paths)
+
 class Pipeline(gst.Pipeline):
-    def __init__(self):
+    def __init__(self, use_gconf):
         gst.Pipeline.__init__(self)
         self.playbin = gst.element_factory_make("playbin")
         self.add(self.playbin)
@@ -32,9 +56,17 @@ class Pipeline(gst.Pipeline):
         bin = gst.Bin("speed-bin")
         self.speedchanger = gst.element_factory_make("pitch")
         bin.add(self.speedchanger)
-        self.audiosink = gst.element_factory_make("autoaudiosink")
+
+        if use_gconf:
+            self.audiosink = gst.element_factory_make("gconfaudiosink")
+        else:
+            self.audiosink = gst.element_factory_make("autoaudiosink")
+
         bin.add(self.audiosink)
-        gst.element_link_many(self.speedchanger, self.audiosink)
+        convert = gst.element_factory_make("audioconvert")
+        bin.add(convert)
+        gst.element_link_many(self.speedchanger, convert)
+        gst.element_link_many(convert, self.audiosink)
         sink_pad = gst.GhostPad("sink", self.speedchanger.get_pad("sink"))
         bin.add_pad(sink_pad)
         self.playbin.set_property("audio-sink", bin)
@@ -113,6 +145,8 @@ class MainWindow(gtk.Window):
     def __init__(self):
         gtk.Window.__init__(self,gtk.WINDOW_TOPLEVEL)
 
+        use_gconf = in_pathlist("gstreamer-properties")
+
         self.set_title(NAME)
         try:
             self.set_icon(mygtk.iconfactory.get_icon("playitslowly", 128))
@@ -123,7 +157,7 @@ class MainWindow(gtk.Window):
 
         self.vbox = gtk.VBox()
 
-        self.pipeline = Pipeline()
+        self.pipeline = Pipeline(use_gconf)
 
         filedialog = mygtk.FileChooserDialog(gtk.FILE_CHOOSER_ACTION_OPEN, parent=self)
         filedialog.connect("response", self.filechanged)
@@ -250,12 +284,12 @@ class MainWindow(gtk.Window):
         start = self.startchooser.get_value()
         end = self.endchooser.get_value()
 
-        if end < start:
+        if end <= start:
             # stupid user...
             self.play_button.set_active(False)
             return False
 
-        if position > end or position < start:
+        if position >= end or position < start:
             self.seek(start)
             return True
 
