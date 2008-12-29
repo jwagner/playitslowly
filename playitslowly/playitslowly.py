@@ -56,14 +56,13 @@ class Pipeline(gst.Pipeline):
 
         bin = gst.Bin("speed-bin")
         try:
-            self.speedchanger = gst.element_factory_make("pitch")
+            self.speedchanger = gst.element_factory_make("pitchx")
             self.pitch = True
         except gst.ElementNotFoundError:
             print "could not find pitch module, trying speed"
             self.speedchanger = gst.element_factory_make("speed")
             self.pitch = False
 
-        self.speedchanger = gst.element_factory_make("pitch")
         bin.add(self.speedchanger)
 
         if use_gconf:
@@ -187,7 +186,7 @@ class MainWindow(gtk.Window):
         self.pitchchooser.connect("value-changed", self.pitchchanged)
 
         if not self.pipeline.pitch:
-            self.pitchchooser.set_active(False)
+            self.pitchchooser.set_state(gtk.STATE_INSENSITIVE)
 
         self.positionchooser = gtk.HScale(gtk.Adjustment(0.0, 0.0, 100.0))
         self.positionchooser.connect("format-value", lambda scale, value: ("%.1f" % value).rjust(6))
