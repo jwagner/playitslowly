@@ -55,6 +55,14 @@ class Pipeline(gst.Pipeline):
         self.add(self.playbin)
 
         bin = gst.Bin("speed-bin")
+        try:
+            self.speedchanger = gst.element_factory_make("pitch")
+            self.pitch = True
+        except gst.ElementNotFoundError:
+            print "could not find pitch module, trying speed"
+            self.speedchanger = gst.element_factory_make("speed")
+            self.pitch = False
+
         self.speedchanger = gst.element_factory_make("pitch")
         bin.add(self.speedchanger)
 
@@ -88,10 +96,14 @@ class Pipeline(gst.Pipeline):
         self.playbin.set_property("volume", volume)
 
     def set_speed(self, speed):
-        self.speedchanger.set_property("tempo", speed)
+        if self.pitch:
+            self.speedchanger.set_property("tempo", speed)
+        else:
+            self.speedchanger.set_property("speed", speed)
 
     def set_pitch(self, pitch):
-        self.speedchanger.set_property("pitch", pitch)
+        if self.pitch:
+            self.speedchanger.set_property("pitch", pitch)
 
     def save_file(self, uri):
         pipeline = gst.Pipeline()
@@ -173,6 +185,9 @@ class MainWindow(gtk.Window):
         self.pitchchooser.connect("format-value", lambda scale, value: ("%.1f" % value).rjust(8))
         self.pitchchooser.set_value_pos(gtk.POS_LEFT)
         self.pitchchooser.connect("value-changed", self.pitchchanged)
+
+        if not self.pipeline.pitch:
+            self.pitchchooser.set_active(False)
 
         self.positionchooser = gtk.HScale(gtk.Adjustment(0.0, 0.0, 100.0))
         self.positionchooser.connect("format-value", lambda scale, value: ("%.1f" % value).rjust(6))
