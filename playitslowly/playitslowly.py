@@ -35,12 +35,13 @@ pygtk.require('2.0')
 import gtk
 
 import mygtk
+mygtk.register_webbrowser_url_hook()
 
-_ = lambda s: s
+_ = lambda s: s # may be add gettext later
 
 NAME = u"Play it slowly"
 VERSION = "1.0"
-WEBSITE = "http://29a.ch/"
+WEBSITE = "http://29a.ch/playitslowly/"
 
 TIME_FORMAT = gst.Format(gst.FORMAT_TIME)
 
@@ -163,25 +164,31 @@ class MainWindow(gtk.Window):
         filedialog.connect("response", self.filechanged)
         self.filechooser = gtk.FileChooserButton(filedialog)
 
-        self.speedchooser = gtk.HScale(gtk.Adjustment(1.0, 0.1, 2.0))
+        self.speedchooser = gtk.HScale(gtk.Adjustment(1.0, 0.05, 2.0))
+        self.speedchooser.connect("format-value", lambda scale, value: ("%.1f" % value).rjust(8))
         self.speedchooser.set_value_pos(gtk.POS_LEFT)
         self.speedchooser.connect("value-changed", self.speedchanged)
 
-        self.pitchchooser = gtk.HScale(gtk.Adjustment(1.0, 0.1, 4.0))
+        self.pitchchooser = gtk.HScale(gtk.Adjustment(1.0, 0.05, 4.0))
+        self.pitchchooser.connect("format-value", lambda scale, value: ("%.1f" % value).rjust(8))
         self.pitchchooser.set_value_pos(gtk.POS_LEFT)
         self.pitchchooser.connect("value-changed", self.pitchchanged)
 
-        self.positionchooser = gtk.HScale(gtk.Adjustment(0, 0, 0))
+        self.positionchooser = gtk.HScale(gtk.Adjustment(0.0, 0.0, 100.0))
+        self.positionchooser.connect("format-value", lambda scale, value: ("%.1f" % value).rjust(6))
         self.positionchooser.set_value_pos(gtk.POS_LEFT)
         self.positionchooser.connect("button-press-event", self.start_seeking)
         self.positionchooser.connect("button-release-event", self.positionchanged)
         self.seeking = False
 
-        self.startchooser = gtk.HScale(gtk.Adjustment(0, 0, 0))
+        self.startchooser = gtk.HScale(gtk.Adjustment(0.0, 0, 100.0))
+        self.startchooser.connect("format-value", lambda scale, value: ("%.1f" % value).rjust(6))
         self.startchooser.set_value_pos(gtk.POS_LEFT)
         self.startchooser.connect("button-press-event", self.start_seeking)
         self.startchooser.connect("button-release-event", self.seeked)
-        self.endchooser = gtk.HScale(gtk.Adjustment(1, 0, 1))
+
+        self.endchooser = gtk.HScale(gtk.Adjustment(1.0, 0, 100.0))
+        self.endchooser.connect("format-value", lambda scale, value: ("%.1f" % value).rjust(6))
         self.endchooser.set_value_pos(gtk.POS_LEFT)
         self.endchooser.connect("button-press-event", self.start_seeking)
         self.endchooser.connect("button-release-event", self.seeked)
@@ -190,7 +197,7 @@ class MainWindow(gtk.Window):
             (_(u"Audio File:"), self.filechooser),
             (_(u"Playback speed:"), self.speedchooser),
             (_(u"Playback Pitch:"), self.pitchchooser),
-            (_(u"Current Position:"), self.positionchooser),
+            (_(u"Position:"), self.positionchooser),
             (_(u"Start Position:"), self.startchooser),
             (_(u"End Position:"), self.endchooser)
         ]), False, False)
@@ -270,15 +277,18 @@ class MainWindow(gtk.Window):
         if sender.get_active():
             self.pipeline.set_file(self.filechooser.get_uri())
             self.pipeline.play()
-            gobject.timeout_add(900, self.update_position)
+            gobject.timeout_add(100, self.update_position)
         else:
             self.pipeline.pause()
 
     def update_position(self):
         if self.seeking:
             return self.play_button.get_active()
-        position, fmt = self.pipeline.playbin.query_position(TIME_FORMAT, None)
-        duration, fmt = self.pipeline.playbin.query_duration(TIME_FORMAT, None)
+        try:
+            position, fmt = self.pipeline.playbin.query_position(TIME_FORMAT, None)
+            duration, fmt = self.pipeline.playbin.query_duration(TIME_FORMAT, None)
+        except gst.QueryError:
+            return self.play_button.get_active()
         position = self.song_time(position)
         duration = self.song_time(duration)
         start = self.startchooser.get_value()
@@ -293,13 +303,14 @@ class MainWindow(gtk.Window):
             self.seek(start)
             return True
 
-        self.positionchooser.set_range(0, duration)
+        self.positionchooser.set_range(0.0, duration)
         end = self.endchooser.get_adjustment()
         delta = end.value-end.upper
-        self.startchooser.set_range(0, duration)
-        self.endchooser.set_range(0, duration)
+        self.startchooser.set_range(0.0, duration)
+        self.endchooser.set_range(0.0, duration)
         self.endchooser.set_value(duration+delta)
-        self.positionchooser.set_value(position)
+        self.positionchooser.set_value(int(position))
+        self.positionchooser.queue_draw()
         return self.play_button.get_active()
 
     def about(self, sender):
@@ -309,7 +320,6 @@ class MainWindow(gtk.Window):
         about.set_logo(mygtk.iconfactory.get_icon("playitslowly", 128))
         about.set_name(NAME)
         about.set_version(VERSION)
-#        about.set_comments("")
         about.set_authors(["Jonas Wagner"])
         about.set_translator_credits(_("translator-credits"))
         about.set_copyright("Copyright (c) 2008 Jonas Wagner")
