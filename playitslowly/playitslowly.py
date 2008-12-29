@@ -248,9 +248,11 @@ class MainWindow(gtk.Window):
             self.play_button.set_active(False)
 
     def pipe_time(self, t):
+        """convert from song position to pipeline time"""
         return t/self.speedchooser.get_value()*1000000000
 
     def song_time(self, t):
+        """convert from piletime time to song position"""
         return t*self.speedchooser.get_value()/1000000000
 
     def start_seeking(self, sender, foo):
@@ -282,6 +284,7 @@ class MainWindow(gtk.Window):
             self.pipeline.pause()
 
     def update_position(self):
+        """update the position of the scales and pipeline"""
         if self.seeking:
             return self.play_button.get_active()
         try:
