@@ -20,6 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import getopt
 import os
 import sys
 
@@ -28,7 +29,11 @@ gobject.threads_init()
 
 import pygst
 pygst.require('0.10')
+
+argv = sys.argv
+sys.argv = []
 import gst
+sys.argv = argv
 
 import pygtk
 pygtk.require('2.0')
@@ -36,6 +41,7 @@ import gtk
 
 import mygtk
 mygtk.register_webbrowser_url_hook()
+
 
 _ = lambda s: s # may be add gettext later
 
@@ -49,7 +55,7 @@ def in_pathlist(filename, paths = os.environ.get("PATH").split(os.pathsep)):
     return any(os.path.exists(os.path.join(path, filename)) for path in paths)
 
 class Pipeline(gst.Pipeline):
-    def __init__(self, use_gconf):
+    def __init__(self, sink):
         gst.Pipeline.__init__(self)
         self.playbin = gst.element_factory_make("playbin")
         self.add(self.playbin)
@@ -58,10 +64,7 @@ class Pipeline(gst.Pipeline):
         self.speedchanger = gst.element_factory_make("pitch")
         bin.add(self.speedchanger)
 
-        if use_gconf:
-            self.audiosink = gst.element_factory_make("gconfaudiosink")
-        else:
-            self.audiosink = gst.element_factory_make("autoaudiosink")
+        self.audiosink = sink
 
         bin.add(self.audiosink)
         convert = gst.element_factory_make("audioconvert")
@@ -143,7 +146,7 @@ class Pipeline(gst.Pipeline):
         self.set_state(gst.STATE_READY)
 
 class MainWindow(gtk.Window):
-    def __init__(self):
+    def __init__(self, sink):
         gtk.Window.__init__(self,gtk.WINDOW_TOPLEVEL)
 
         use_gconf = in_pathlist("gstreamer-properties")
@@ -158,7 +161,7 @@ class MainWindow(gtk.Window):
 
         self.vbox = gtk.VBox()
 
-        self.pipeline = Pipeline(use_gconf)
+        self.pipeline = Pipeline(sink)
 
         filedialog = mygtk.FileChooserDialog(gtk.FILE_CHOOSER_ACTION_OPEN, parent=self)
         filedialog.connect("response", self.filechanged)
@@ -344,7 +347,21 @@ GNU General Public License for more details.
         about.destroy()
 
 def main():
-    MainWindow().show_all()
+    sink = "autoaudiosink"
+    use_gconf = in_pathlist("gstreamer-properties")
+    if use_gconf: 
+        sink = "gconfaudiosink"
+    options, arguments = getopt.getopt(sys.argv[1:], "h", ["help", "sink="])
+    for option, argument in options:
+        if option in ("-h", "--help"):
+            print "Usage: playitslowly [OPTIONS]..."
+            print "Options:"
+            print '--sink=sink      specify gstreamer sink for playback'
+            sys.exit()
+        elif option == "--sink":
+            sink = argument
+    sink = gst.parse_bin_from_description(sink, True)
+    MainWindow(sink).show_all()
     gtk.main()
 
 if __name__ == "__main__":
