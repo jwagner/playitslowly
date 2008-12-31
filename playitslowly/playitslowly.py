@@ -40,7 +40,10 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
-from playitslowly import mygtk
+try:
+    from playitslowly import mygtk
+except ImportError:
+    import mygtk
 mygtk.register_webbrowser_url_hook()
 
 _ = lambda s: s # may be add gettext later
