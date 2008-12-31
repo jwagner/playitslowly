@@ -39,7 +39,7 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
-import mygtk
+from playitslowly import mygtk
 mygtk.register_webbrowser_url_hook()
 
 

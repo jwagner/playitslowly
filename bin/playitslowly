@@ -1,2 +1,2 @@
 #!/bin/sh
-python -m playitslowly.playitslowly $*
+python -m playitslowly.playitslowly "$@"
