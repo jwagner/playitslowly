@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8 :
+from __future__ import with_statement
 """
 Author: Jonas Wagner
 
@@ -42,17 +43,41 @@ import gtk
 from playitslowly import mygtk
 mygtk.register_webbrowser_url_hook()
 
-
 _ = lambda s: s # may be add gettext later
 
 NAME = u"Play it slowly"
 VERSION = "1.0"
 WEBSITE = "http://29a.ch/playitslowly/"
 
+if sys.platform == "win32":
+    CONFIG_PATH = os.path.expanduser("~/playitslowly.ini")
+else:
+    XDG_CONFIG_HOME = os.path.expanduser(os.environ.get("XDG_CONFIG_HOME", "~/.config"))
+    if not os.path.exists(XDG_CONFIG_HOME):
+        os.mkdir(XDG_CONFIG_HOME)
+    CONFIG_PATH = os.path.join(XDG_CONFIG_HOME, "playitslowly.ini")
+
 TIME_FORMAT = gst.Format(gst.FORMAT_TIME)
 
 def in_pathlist(filename, paths = os.environ.get("PATH").split(os.pathsep)):
     return any(os.path.exists(os.path.join(path, filename)) for path in paths)
+
+class Config(dict):
+    def __init__(self, path=None):
+        dict.__init__(self)
+        self.path = path
+
+    def load(self):
+        with open(self.path, "rb") as f:
+            for line in f:
+                key, value = line.split("=", 1)
+                self[key] = value[:-1].decode("string_escape")
+
+    def save(self):
+        with open(self.path, "wb") as f:
+            for key in self:
+                f.write("%s=%s\n" % (key, str(self[key]).encode("string_escape")))
+
 
 class Pipeline(gst.Pipeline):
     def __init__(self, sink):
@@ -157,10 +182,8 @@ class Pipeline(gst.Pipeline):
         self.set_state(gst.STATE_READY)
 
 class MainWindow(gtk.Window):
-    def __init__(self, sink):
+    def __init__(self, sink, config):
         gtk.Window.__init__(self,gtk.WINDOW_TOPLEVEL)
-
-        use_gconf = in_pathlist("gstreamer-properties")
 
         self.set_title(NAME)
         try:
@@ -174,9 +197,9 @@ class MainWindow(gtk.Window):
 
         self.pipeline = Pipeline(sink)
 
-        filedialog = mygtk.FileChooserDialog(gtk.FILE_CHOOSER_ACTION_OPEN, parent=self)
-        filedialog.connect("response", self.filechanged)
-        self.filechooser = gtk.FileChooserButton(filedialog)
+        self.filedialog = mygtk.FileChooserDialog(gtk.FILE_CHOOSER_ACTION_OPEN, parent=self)
+        self.filedialog.connect("response", self.filechanged)
+        self.filechooser = gtk.FileChooserButton(self.filedialog)
 
         self.speedchooser = gtk.HScale(gtk.Adjustment(1.0, 0.05, 2.0))
         self.speedchooser.connect("format-value", lambda scale, value: ("%.1f" % value).rjust(8))
@@ -246,8 +269,46 @@ class MainWindow(gtk.Window):
         self.add(self.vbox)
         self.connect("destroy", gtk.main_quit)
 
+        self.config = config
+        self.config_saving = False
+        self.load_config()
+
+    def load_config(self):
+        self.config_saving = True # do not save while loading
+        if "file" in self.config:
+            #self.filedialog.set_uri(self.config["file"])
+            self.filechooser.set_uri(self.config["file"])
+            self.filechanged(None, None)
+            self.speedchooser.set_value(float(self.config["speed"]))
+            self.pitchchooser.set_value(float(self.config["pitch"]))
+            self.startchooser.get_adjustment().set_property("upper", float(self.config["duration"]))
+            self.startchooser.set_value(float(self.config["start"]))
+            self.endchooser.get_adjustment().set_property("upper", float(self.config["duration"]))
+            self.endchooser.set_value(float(self.config["end"]))
+            self.volume_button.set_value(float(self.config["volume"]))
+        self.config_saving = False
+
+    def save_config(self):
+        """saves the config file with a delay"""
+        if self.config_saving:
+            return
+        gobject.timeout_add(1000, self.save_config_now)
+        self.config_saving = True
+
+    def save_config_now(self):
+        self.config_saving = False
+        self.config["file"] = self.filedialog.get_uri()
+        self.config["speed"] = self.speedchooser.get_value()
+        self.config["pitch"] = self.pitchchooser.get_value()
+        self.config["duration"] = self.startchooser.get_adjustment().get_property("upper")
+        self.config["start"] = self.startchooser.get_value()
+        self.config["end"] = self.endchooser.get_value()
+        self.config["volume"] = self.volume_button.get_value()
+        self.config.save()
+
     def volumechanged(self, sender, foo):
         self.pipeline.set_volume(sender.get_value())
+        self.save_config()
 
     def save(self, sender):
         dialog = mygtk.FileChooserDialog(gtk.FILE_CHOOSER_ACTION_SAVE,
@@ -261,8 +322,10 @@ class MainWindow(gtk.Window):
     def filechanged(self, sender, response_id):
         self.play_button.set_sensitive(True)
         self.save_as_button.set_sensitive(True)
+        # stop playing
         if response_id == gtk.RESPONSE_OK:
             self.play_button.set_active(False)
+        self.save_config()
 
     def pipe_time(self, t):
         """convert from song position to pipeline time"""
@@ -277,10 +340,12 @@ class MainWindow(gtk.Window):
 
     def seeked(self, sender, foo):
         self.seeking = False
+        self.save_config()
 
     def positionchanged(self, sender, foo):
         self.seek(sender.get_value())
         self.seeking = False
+        self.save_config()
 
     def seek(self, pos):
         pos = self.pipe_time(pos)
@@ -288,13 +353,15 @@ class MainWindow(gtk.Window):
 
     def speedchanged(self, sender):
         self.pipeline.set_speed(sender.get_value())
+        self.save_config()
 
     def pitchchanged(self, sender):
         self.pipeline.set_pitch(sender.get_value())
+        self.save_config()
 
     def play(self, sender):
         if sender.get_active():
-            self.pipeline.set_file(self.filechooser.get_uri())
+            self.pipeline.set_file(self.filedialog.get_uri())
             self.pipeline.play()
             gobject.timeout_add(100, self.update_position)
         else:
@@ -362,8 +429,7 @@ GNU General Public License for more details.
 
 def main():
     sink = "autoaudiosink"
-    use_gconf = in_pathlist("gstreamer-properties")
-    if use_gconf: 
+    if in_pathlist("gstreamer-properties"):
         sink = "gconfaudiosink"
     options, arguments = getopt.getopt(sys.argv[1:], "h", ["help", "sink="])
     for option, argument in options:
@@ -374,8 +440,14 @@ def main():
             sys.exit()
         elif option == "--sink":
             sink = argument
+    config = Config(CONFIG_PATH)
+    try:
+        config.load()
+    except IOError:
+        pass
     sink = gst.parse_bin_from_description(sink, True)
-    MainWindow(sink).show_all()
+    win = MainWindow(sink, config)
+    win.show_all()
     gtk.main()
 
 if __name__ == "__main__":
