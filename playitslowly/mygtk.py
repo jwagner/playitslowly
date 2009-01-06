@@ -200,6 +200,30 @@ def make_table(widgets):
                     xpadding=4, ypadding=4)
     return table
 
+class Scale(object):
+    """A scale that adheres to increment steps"""
+    def __init__(self):
+        self.connect("change-value", self.adjust)
+
+    def adjust(self, range, scroll, value):
+        adj = self.get_adjustment()
+        lower = adj.get_property('lower')
+        upper = adj.get_property('upper')
+        incr = adj.get_property('step-increment')
+        value -= (value % incr)
+        self.set_value(min(max(lower, value), upper))
+        return True
+
+class VScale(gtk.VScale, Scale):
+    def __init__(self, *args):
+        gtk.VScale.__init__(self, *args)
+        Scale.__init__(self)
+
+class HScale(gtk.HScale, Scale):
+    def __init__(self, *args):
+        gtk.HScale.__init__(self, *args)
+        Scale.__init__(self)
+
 class ListStore(gtk.ListStore):
     class Columns(list):
         def __getattr__(self, name):

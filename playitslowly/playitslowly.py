@@ -204,13 +204,13 @@ class MainWindow(gtk.Window):
         self.filedialog.connect("response", self.filechanged)
         self.filechooser = gtk.FileChooserButton(self.filedialog)
 
-        self.speedchooser = gtk.HScale(gtk.Adjustment(1.0, 0.05, 2.0))
-        self.speedchooser.connect("format-value", lambda scale, value: ("%.1f" % value).rjust(8))
+        self.speedchooser = mygtk.HScale(gtk.Adjustment(1.05, 0.05, 4.0, 0.05, 0.05))
+        self.speedchooser.connect("format-value", lambda scale, value: ("%.2f" % value).rjust(7))
         self.speedchooser.set_value_pos(gtk.POS_LEFT)
         self.speedchooser.connect("value-changed", self.speedchanged)
 
-        self.pitchchooser = gtk.HScale(gtk.Adjustment(1.0, 0.05, 4.0))
-        self.pitchchooser.connect("format-value", lambda scale, value: ("%.1f" % value).rjust(8))
+        self.pitchchooser = mygtk.HScale(gtk.Adjustment(0.0, -24.0, 24.0, 1.0, 1.0, 0.0))
+        self.pitchchooser.connect("format-value", lambda scale, value: ("%.2f" % value).rjust(7))
         self.pitchchooser.set_value_pos(gtk.POS_LEFT)
         self.pitchchooser.connect("value-changed", self.pitchchanged)
 
@@ -359,7 +359,7 @@ class MainWindow(gtk.Window):
         self.save_config()
 
     def pitchchanged(self, sender):
-        self.pipeline.set_pitch(sender.get_value())
+        self.pipeline.set_pitch(2**(sender.get_value()/12.0))
         self.save_config()
 
     def play(self, sender):
