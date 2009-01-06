@@ -10,23 +10,54 @@ It allows you to play a piece of music at a different speed or pitch.
 Generic Installation
 ====================
 To install use you need to have the following libraries installed:
-* Python 2.5
-* PyGTK >= 2.10
-* PyGST >= 0.10
+
+ * Python 2.5
+ * PyGTK >= 2.10
+ * PyGST >= 0.10
+ * gstreamer including the soundtouch/pitch element
+
 Normally these libraries are already installed on your system.
 
 To install play it slowly execute: ``python setup.py install`` as 
 superuser (root). If you are using a gnome based system like Ubuntu
 you can just doubleclick ``install.sh`` and select run.
 
+Distribution Specific Installation Hints
+========================================
+
+Arch Linux
+----------
+Arch Linux is missing the pitch element, so you'll have to compile
+yourself::
+
+    pacman -S soundtouch
+    cd /tmp
+    wget gstreamer.freedesktop.org/src/gst-plugins-bad/gst-plugins-bad-0.10.9.tar.gz
+    tar xzf gst-plugins-bad-0.10.9.tar.gz
+    ./configure --prefix=/usr
+    cd ext/soundtouch
+    make && make install 
+
+Then test if it worked::
+
+    gst-inspect-0.10 soundtouch
+
+Mandriva
+--------
+Install gstreamer0.10-soundtouch.
+
+Ubuntu
+------
+It should work out of the box!
+
 Hacking
 =======
 If you want to change play it slowly, please use the git repository
-and send me either a patch or your repository url afterwards.
+and send me either a patch or your repository url afterwards::
 
-$ git clone http://29a.ch/git/playitslowly
-$ hack...
-$ git diff > myfeature.patch
+    $ git clone http://29a.ch/git/playitslowly
+    hack...
+    $ git diff > myfeature.patch
 
 If you have any questions or a patch just drop me a mail.
 
