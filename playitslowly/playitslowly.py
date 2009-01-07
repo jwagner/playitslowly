@@ -40,10 +40,7 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
-try:
-    from playitslowly import mygtk
-except ImportError:
-    import mygtk
+from . import mygtk
 mygtk.register_webbrowser_url_hook()
 
 _ = lambda s: s # may be add gettext later
@@ -200,7 +197,7 @@ class MainWindow(gtk.Window):
 
         self.pipeline = Pipeline(sink)
 
-        self.filedialog = mygtk.FileChooserDialog(gtk.FILE_CHOOSER_ACTION_OPEN, parent=self)
+        self.filedialog = mygtk.FileChooserDialog(None, self, gtk.FILE_CHOOSER_ACTION_OPEN)
         self.filedialog.connect("response", self.filechanged)
         self.filechooser = gtk.FileChooserButton(self.filedialog)
 
@@ -314,8 +311,8 @@ class MainWindow(gtk.Window):
         self.save_config()
 
     def save(self, sender):
-        dialog = mygtk.FileChooserDialog(gtk.FILE_CHOOSER_ACTION_SAVE,
-                u"Save modified version as", self)
+        dialog = mygtk.FileChooserDialog(_(u"Save modified version as"),
+                self, gtk.FILE_CHOOSER_ACTION_SAVE)
         dialog.set_current_name("export.wav")
         if dialog.run() == gtk.RESPONSE_OK:
             self.pipeline.set_file(self.filechooser.get_uri())

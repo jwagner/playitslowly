@@ -4,7 +4,7 @@ import sys
 buttons_ok_cancel = (gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK)
 class FileChooserDialog(gtk.FileChooserDialog):
     """a file chooser dialog which automatically sets the correct buttons!"""
-    def __init__(self, action, title=None, parent=None):
+    def __init__(self, title=None, parent=None, action=None):
         if action == gtk.FILE_CHOOSER_ACTION_SAVE:
             buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE ,gtk.RESPONSE_OK)
             title = title or u"Save File"
