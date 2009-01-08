@@ -5,7 +5,7 @@ from __future__ import with_statement
 Author: Jonas Wagner
 
 Play it slowly
-Copyright (C) 2008 Jonas Wagner
+Copyright (C) 2009 Jonas Wagner
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ mygtk.register_webbrowser_url_hook()
 _ = lambda s: s # may be add gettext later
 
 NAME = u"Play it slowly"
-VERSION = "1.0"
+VERSION = "1.1"
 WEBSITE = "http://29a.ch/playitslowly/"
 
 if sys.platform == "win32":
@@ -412,11 +412,11 @@ class MainWindow(gtk.Window):
         about.set_version(VERSION)
         about.set_authors(["Jonas Wagner"])
         about.set_translator_credits(_("translator-credits"))
-        about.set_copyright("Copyright (c) 2008 Jonas Wagner")
+        about.set_copyright("Copyright (c) 2009 Jonas Wagner")
         about.set_website(WEBSITE)
         about.set_website_label(WEBSITE)
         about.set_license("""
-Copyright (C) 2008 Jonas Wagner
+Copyright (C) 2009 Jonas Wagner
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 3 of the License, or

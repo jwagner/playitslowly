@@ -15,7 +15,7 @@ def ls_r(dir):
 
 kwargs = {
       'name': 'playitslowly',
-      'version': "1.0.0",
+      'version': "1.1.0",
       'description': 'A tool to help you when transcribing music. It allows you to play a piece of music at a different speed or pitch.',
       'author': 'Jonas Wagner',
       'author_email': 'veers@gmx.ch',

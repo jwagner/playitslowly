@@ -14,7 +14,8 @@ To install use you need to have the following libraries installed:
  * Python 2.5
  * PyGTK >= 2.10
  * PyGST >= 0.10
- * gstreamer including the soundtouch/pitch element
+ * gstreamer >= 0.10 including the soundtouch/pitch element
+   (included in gstreamer-plugins-bad)
 
 Normally these libraries are already installed on your system.
 
@@ -63,7 +64,7 @@ If you have any questions or a patch just drop me a mail.
 
 License
 =======
-Copyright (C) 2008  Jonas Wagner
+Copyright (C) 2009  Jonas Wagner
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
