@@ -40,7 +40,7 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
-from . import mygtk
+from playitslowly import mygtk
 mygtk.install()
 
 _ = lambda s: s # may be add gettext later
@@ -197,7 +197,7 @@ class MainWindow(gtk.Window):
         self.filedialog.connect("response", self.filechanged)
         self.filechooser = gtk.FileChooserButton(self.filedialog)
 
-        self.speedchooser = mygtk.HScale(gtk.Adjustment(1.05, 0.05, 4.0, 0.05, 0.05))
+        self.speedchooser = mygtk.HScale(gtk.Adjustment(1.00, 0.10, 4.0, 0.05, 0.05))
         self.speedchooser.connect("format-value", lambda scale, value: ("%.2f" % value).rjust(7))
         self.speedchooser.set_value_pos(gtk.POS_LEFT)
         self.speedchooser.connect("value-changed", self.speedchanged)
