@@ -1,20 +1,22 @@
 import gtk, gobject
 import sys
 
+_ = lambda s: s
+
 buttons_ok_cancel = (gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK)
 class FileChooserDialog(gtk.FileChooserDialog):
     """a file chooser dialog which automatically sets the correct buttons!"""
-    def __init__(self, action, title=None, parent=None):
+    def __init__(self, title=None, parent=None, action=None):
         if action == gtk.FILE_CHOOSER_ACTION_SAVE:
             buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE ,gtk.RESPONSE_OK)
-            title = title or u"Save File"
+            title = title or _(u"Save File")
         else:
             if action == gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER:
-                title = title or u"Select Folder"
+                title = title or _(u"Select Folder")
             elif action == gtk.FILE_CHOOSER_ACTION_CREATE_FOLDER:
-                title = title or u"Create Folder"
+                title = title or _(u"Create Folder")
             else:
-                title = title or u"Open a File"
+                title = title or _(u"Open a File")
             buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN ,gtk.RESPONSE_OK)
         gtk.FileChooserDialog.__init__(self, title, parent, action, buttons)
 
@@ -63,12 +65,13 @@ def scrolled(widget, shadow=gtk.SHADOW_NONE):
     window = gtk.ScrolledWindow()
     window.set_shadow_type(shadow)
     window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-    if any(isinstance(widget, widgettype)
-            for widgettype in (gtk.TextView, gtk.Layout)):
-        window.add(gtk.Frame(widget))
+    if widget.set_scroll_adjustments(window.get_hadjustment(),
+                                      window.get_vadjustment()):
+        window.add(widget)
     else:
         window.add_with_viewport(widget)
     return window
+
 
 def make_table(widgets):
     """return a gtk.Table containing all the widgets"""
@@ -152,12 +155,13 @@ def show_error(msg):
     """Show a 'nice' errbox"""
     dialog = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, message_format=str(msg),
             buttons=gtk.BUTTONS_OK)
-    dialog.set_title("Error")
+    dialog.set_title(_("Error"))
     # dialog.run() - this breaks when called from gobject.idle_add
     # dialog.hide()
     # dialog.destroy
     dialog.show()
     dialog.connect("response", lambda dialog, response: dialog.destroy())
+    return dialog
 
 def make_menu(entries, menu):
     for entry in entries:
@@ -259,3 +263,38 @@ class ListStore(gtk.ListStore):
         else:
             gtk.ListStore.append(self, self.columns.ordered(kwargs))
 
+
+class ExceptionDialog(gtk.MessageDialog):
+    def __init__(self, etype, evalue, etb):
+        gtk.MessageDialog.__init__(self, buttons=gtk.BUTTONS_CLOSE, type=gtk.MESSAGE_ERROR)
+        self.set_resizable(True)
+        self.set_markup(_("An error has occured:\n%r\nYou should save your work and restart the application. If the error occurs again please report it to the developer." % evalue))
+        import cgitb
+        text = cgitb.text((etype, evalue, etb), 5)
+        expander = gtk.Expander(_("Exception Details"))
+        self.vbox.pack_start(expander)
+        textview = gtk.TextView()
+        textview.get_buffer().set_text(text)
+        expander.add(scrolled(textview))
+        self.show_all()
+
+def install_exception_hook(dialog=ExceptionDialog):
+    old_hook = sys.excepthook
+    def new_hook(etype, evalue, etb):
+        if etype not in (KeyboardInterrupt, SystemExit):
+            d = dialog(etype, evalue, etb)
+            d.run()
+            d.destroy()
+        old_hook(etype, evalue, etb)
+    new_hook.old_hook = old_hook
+    sys.excepthook = new_hook
+
+def install():
+    """install/register all hooks provided by mygtk"""
+    install_exception_hook()
+    register_webbrowser_url_hook()
+
+if __name__ == "__main__":
+    install_exception_hook()
+    idle_do(lambda: 1/0)
+    gtk.main()
