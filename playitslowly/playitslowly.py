@@ -41,7 +41,7 @@ pygtk.require('2.0')
 import gtk
 
 from . import mygtk
-mygtk.register_webbrowser_url_hook()
+mygtk.install()
 
 _ = lambda s: s # may be add gettext later
 
@@ -88,11 +88,11 @@ class Pipeline(gst.Pipeline):
         bin = gst.Bin("speed-bin")
         try:
             self.speedchanger = gst.element_factory_make("pitch")
-            self.pitch = True
         except gst.ElementNotFoundError:
-            print "could not find pitch module, trying speed"
-            self.speedchanger = gst.element_factory_make("speed")
-            self.pitch = False
+            mygtk.show_error(_(u"You need to install the gstreamer soundtouch elements for "
+                    "play it slowly to. They are part of gstreamer-plugins-bad. Consult the "
+                    "README if you need more information.")).run()
+            raise SystemExit()
 
         bin.add(self.speedchanger)
 
@@ -123,14 +123,10 @@ class Pipeline(gst.Pipeline):
         self.playbin.set_property("volume", volume)
 
     def set_speed(self, speed):
-        if self.pitch:
-            self.speedchanger.set_property("tempo", speed)
-        else:
-            self.speedchanger.set_property("speed", speed)
+        self.speedchanger.set_property("tempo", speed)
 
     def set_pitch(self, pitch):
-        if self.pitch:
-            self.speedchanger.set_property("pitch", pitch)
+        self.speedchanger.set_property("pitch", pitch)
 
     def save_file(self, uri):
         pipeline = gst.Pipeline()
@@ -210,9 +206,6 @@ class MainWindow(gtk.Window):
         self.pitchchooser.connect("format-value", lambda scale, value: ("%.2f" % value).rjust(7))
         self.pitchchooser.set_value_pos(gtk.POS_LEFT)
         self.pitchchooser.connect("value-changed", self.pitchchanged)
-
-        if not self.pipeline.pitch:
-            self.pitchchooser.set_sensitive(False)
 
         self.positionchooser = gtk.HScale(gtk.Adjustment(0.0, 0.0, 100.0))
         self.positionchooser.connect("format-value", lambda scale, value: ("%.1f" % value).rjust(6))
