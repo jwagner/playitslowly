@@ -427,7 +427,7 @@ def main():
     options, arguments = getopt.getopt(sys.argv[1:], "h", ["help", "sink="])
     for option, argument in options:
         if option in ("-h", "--help"):
-            print "Usage: playitslowly [OPTIONS]..."
+            print "Usage: playitslowly [OPTIONS]... [FILE]"
             print "Options:"
             print '--sink=sink      specify gstreamer sink for playback'
             sys.exit()
@@ -440,6 +440,9 @@ def main():
         pass
     sink = gst.parse_bin_from_description(sink, True)
     win = MainWindow(sink, config)
+    if arguments:
+        win.filechooser.set_filename(arguments[0])
+        win.filechanged(None, None)
     win.show_all()
     gtk.main()
 
