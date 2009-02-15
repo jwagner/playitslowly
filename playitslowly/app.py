@@ -235,6 +235,9 @@ class MainWindow(gtk.Window):
             (_(u"End Position:"), self.endchooser)
         ]), False, False)
 
+        metronome_expander = gtk.Expander("Metronome")
+        self.vbox.pack_start(metronome_expander)
+
         buttonbox = gtk.HButtonBox()
         self.vbox.pack_end(buttonbox, False, False)
 
