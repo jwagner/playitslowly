@@ -182,10 +182,12 @@ class MainWindow(gtk.Window):
         gtk.Window.__init__(self,gtk.WINDOW_TOPLEVEL)
 
         self.set_title(NAME)
+
         try:
             self.set_icon(mygtk.iconfactory.get_icon("playitslowly", 128))
         except gobject.GError:
             print "could not load playitslowly icon"
+
         self.set_default_size(440, 200)
         self.set_border_width(5)
 
@@ -236,6 +238,16 @@ class MainWindow(gtk.Window):
         ]), False, False)
 
         metronome_expander = gtk.Expander("Metronome")
+        self.bpmchooser = mygtk.HScale(gtk.Adjustment(60.0, 1.0, 300.0, 1.0, 1.0, 0.0))
+        self.bpmchooser.set_value_pos(gtk.POS_LEFT)
+        self.offsetchooser = mygtk.HScale(gtk.Adjustment(0.0, 0, 5.0, 0.01))
+        self.offsetchooser.connect("format-value", lambda scale, value: ("%.2f" % value).rjust(7))
+        self.offsetchooser.set_value_pos(gtk.POS_LEFT)
+        metronome_expander.add(mygtk.form([
+            (_(u"BPM:"), self.bpmchooser),
+            (_(u"Offset:"), self.offsetchooser),
+        ]))
+
         self.vbox.pack_start(metronome_expander)
 
         buttonbox = gtk.HButtonBox()
@@ -435,6 +447,7 @@ def main():
             print '--sink=sink      specify gstreamer sink for playback'
             sys.exit()
         elif option == "--sink":
+            print "sink", argument
             sink = argument
     config = Config(CONFIG_PATH)
     try:

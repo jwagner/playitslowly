@@ -233,7 +233,7 @@ class Scale(object):
         adj = self.get_adjustment()
         lower = adj.get_property('lower')
         upper = adj.get_property('upper')
-        incr = adj.get_property('step-increment')
+        incr = adj.get_property('step-increment') or 1
         value -= (value % incr)
         self.set_value(min(max(lower, value), upper))
         return True
