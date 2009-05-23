@@ -32,6 +32,7 @@ import pygst
 pygst.require('0.10')
 
 argv = sys.argv
+# work around gstreamer parsing sys.argv!
 sys.argv = []
 import gst
 sys.argv = argv
