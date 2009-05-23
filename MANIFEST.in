@@ -1,2 +1,2 @@
 recursive-include share *
-include COPYING install.sh
+include COPYING install.sh CHANGELOG

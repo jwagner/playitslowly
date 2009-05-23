@@ -14,6 +14,18 @@ The following keyboard shortcuts exist:
  * Alt + e: Rewind (5 seconds)
  * 0-9: Rewind (x seconds)
 
+Selecting the audio output device
+=================================
+You can select which audiodevice playitslowly uses by passing
+a gstreamer sink with the --sink commandline parameter.
+
+Example:
+playitslowly "--sink=alsasink device=plughw:GT10"
+or
+playitslowly "--sink=alsasink device=hw:1"
+
+You can also use other sinks than alsa.
+
 Generic Installation
 ====================
 To install use you need to have the following libraries installed:
