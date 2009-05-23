@@ -47,7 +47,7 @@ mygtk.install()
 _ = lambda s: s # may be add gettext later
 
 NAME = u"Play it slowly"
-VERSION = "1.1"
+VERSION = "1.2"
 WEBSITE = "http://29a.ch/playitslowly/"
 
 if sys.platform == "win32":
@@ -249,7 +249,7 @@ class MainWindow(gtk.Window):
             (_(u"Offset:"), self.offsetchooser),
         ]))
 
-        self.vbox.pack_start(metronome_expander)
+        #self.vbox.pack_start(metronome_expander)
 
         buttonbox = gtk.HButtonBox()
         self.vbox.pack_end(buttonbox, False, False)
@@ -259,6 +259,12 @@ class MainWindow(gtk.Window):
         self.play_button.set_use_stock(True)
         self.play_button.set_sensitive(False)
         buttonbox.pack_start(self.play_button)
+
+        self.back_button = gtk.Button(gtk.STOCK_MEDIA_REWIND)
+        self.back_button.connect("clicked", self.back)
+        self.back_button.set_use_stock(True)
+        self.back_button.set_sensitive(False)
+        buttonbox.pack_start(self.back_button)
 
         self.volume_button = gtk.VolumeButton()
         self.volume_button.set_value(1.0)
@@ -329,7 +335,9 @@ class MainWindow(gtk.Window):
         dialog.destroy()
 
     def filechanged(self, sender, response_id):
+        # todo: centralise this
         self.play_button.set_sensitive(True)
+        self.back_button.set_sensitive(True)
         self.save_as_button.set_sensitive(True)
         # stop playing
         if response_id == gtk.RESPONSE_OK:
@@ -368,6 +376,16 @@ class MainWindow(gtk.Window):
         self.pipeline.set_pitch(2**(sender.get_value()/12.0))
         self.save_config()
 
+    def back(self, sender):
+        try:
+            position, fmt = self.pipeline.playbin.query_position(TIME_FORMAT, None)
+        except gst.QueryError:
+            return
+        t = self.song_time(position)-5.0
+        if t < 0:
+            t = 0
+        self.seek(t)
+
     def play(self, sender):
         if sender.get_active():
             self.pipeline.set_file(self.filedialog.get_uri())
@@ -391,7 +409,6 @@ class MainWindow(gtk.Window):
         end = self.endchooser.get_value()
 
         if end <= start:
-            # stupid user...
             self.play_button.set_active(False)
             return False
 
@@ -402,6 +419,8 @@ class MainWindow(gtk.Window):
         self.positionchooser.set_range(0.0, duration)
         end = self.endchooser.get_adjustment()
         delta = end.value-end.upper
+        if delta <= -duration:
+            delta = 0
         self.startchooser.set_range(0.0, duration)
         self.endchooser.set_range(0.0, duration)
         self.endchooser.set_value(duration+delta)
