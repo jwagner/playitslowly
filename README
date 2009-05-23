@@ -7,6 +7,13 @@ About
 'Play it slowly' is a tool to help you when transcribing music.
 It allows you to play a piece of music at a different speed or pitch.
 
+Shortcuts
+=========
+The following keyboard shortcuts exist:
+ * Alt + P: Play/Pause
+ * Alt + e: Rewind (5 seconds)
+ * 0-9: Rewind (x seconds)
+
 Generic Installation
 ====================
 To install use you need to have the following libraries installed:
@@ -43,6 +50,10 @@ Then test if it worked::
 
     gst-inspect-0.10 soundtouch
 
+Fedora
+------
+Install gstreamer-plugins-bad-extras
+
 Mandriva
 --------
 Install gstreamer0.10-soundtouch.
@@ -50,6 +61,7 @@ Install gstreamer0.10-soundtouch.
 Ubuntu
 ------
 It should work out of the box!
+
 
 Hacking
 =======
@@ -61,6 +73,7 @@ and send me either a patch or your repository url afterwards::
     $ git diff > myfeature.patch
 
 If you have any questions or a patch just drop me a mail.
+
 
 License
 =======
@@ -85,10 +98,12 @@ Bugreports / Questions
 If you encounter any bugs or have suggestions or just want to
 thank me - I would like to hear about it!
 
+
 Known Issues
 ============
 * The pitch gst-plugin used sometimes crashes when changing the pitch while
   playing.
+
 
 Contact
 =======

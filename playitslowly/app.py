@@ -261,7 +261,7 @@ class MainWindow(gtk.Window):
         buttonbox.pack_start(self.play_button)
 
         self.back_button = gtk.Button(gtk.STOCK_MEDIA_REWIND)
-        self.back_button.connect("clicked", self.back)
+        self.back_button.connect("clicked", self.back, 5.0)
         self.back_button.set_use_stock(True)
         self.back_button.set_sensitive(False)
         buttonbox.pack_start(self.back_button)
@@ -280,6 +280,8 @@ class MainWindow(gtk.Window):
         button_about = gtk.Button(stock=gtk.STOCK_ABOUT)
         button_about.connect("clicked", self.about)
         buttonbox.pack_end(button_about)
+
+        self.connect("key-release-event", self.key_release)
 
         self.add(self.vbox)
         self.connect("destroy", gtk.main_quit)
@@ -320,6 +322,13 @@ class MainWindow(gtk.Window):
         self.config["end"] = self.endchooser.get_value()
         self.config["volume"] = self.volume_button.get_value()
         self.config.save()
+
+    def key_release(self, sender, event):
+        try:
+            val = int(chr(event.keyval))
+        except ValueError:
+            return
+        self.back(self, val)
 
     def volumechanged(self, sender, foo):
         self.pipeline.set_volume(sender.get_value())
@@ -376,12 +385,12 @@ class MainWindow(gtk.Window):
         self.pipeline.set_pitch(2**(sender.get_value()/12.0))
         self.save_config()
 
-    def back(self, sender):
+    def back(self, sender, amount):
         try:
             position, fmt = self.pipeline.playbin.query_position(TIME_FORMAT, None)
         except gst.QueryError:
             return
-        t = self.song_time(position)-5.0
+        t = self.song_time(position)-amount
         if t < 0:
             t = 0
         self.seek(t)
