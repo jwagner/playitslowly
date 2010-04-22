@@ -5,7 +5,7 @@ from __future__ import with_statement
 Author: Jonas Wagner
 
 Play it slowly
-Copyright (C) 2009 Jonas Wagner
+Copyright (C) 2010 Jonas Wagner
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -24,6 +24,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import getopt
 import os
 import sys
+
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 import gobject
 gobject.threads_init()
@@ -47,16 +52,16 @@ mygtk.install()
 _ = lambda s: s # may be add gettext later
 
 NAME = u"Play it slowly"
-VERSION = "1.2"
+VERSION = "1.3"
 WEBSITE = "http://29a.ch/playitslowly/"
 
 if sys.platform == "win32":
-    CONFIG_PATH = os.path.expanduser("~/playitslowly.ini")
+    CONFIG_PATH = os.path.expanduser("~/playitslowly.json")
 else:
     XDG_CONFIG_HOME = os.path.expanduser(os.environ.get("XDG_CONFIG_HOME", "~/.config"))
     if not os.path.exists(XDG_CONFIG_HOME):
         os.mkdir(XDG_CONFIG_HOME)
-    CONFIG_PATH = os.path.join(XDG_CONFIG_HOME, "playitslowly.ini")
+    CONFIG_PATH = os.path.join(XDG_CONFIG_HOME, "playitslowly.json")
 
 TIME_FORMAT = gst.Format(gst.FORMAT_TIME)
 
@@ -70,14 +75,16 @@ class Config(dict):
 
     def load(self):
         with open(self.path, "rb") as f:
-            for line in f:
-                key, value = line.split("=", 1)
-                self[key] = value[:-1].decode("string_escape")
+            try:
+                data = json.load(f)
+            except Exception:
+                data = {}
+        self.clear()
+        self.update(data)
 
     def save(self):
         with open(self.path, "wb") as f:
-            for key in self:
-                f.write("%s=%s\n" % (key, str(self[key]).encode("string_escape")))
+            json.dump(self, f)
 
 
 class Pipeline(gst.Pipeline):
@@ -200,32 +207,32 @@ class MainWindow(gtk.Window):
         self.filedialog.connect("response", self.filechanged)
         self.filechooser = gtk.FileChooserButton(self.filedialog)
 
-        self.speedchooser = mygtk.HScale(gtk.Adjustment(1.00, 0.10, 4.0, 0.05, 0.05))
-        self.speedchooser.connect("format-value", lambda scale, value: ("%.2f" % value).rjust(7))
-        self.speedchooser.set_value_pos(gtk.POS_LEFT)
+        self.speedchooser = mygtk.HScale(gtk.Adjustment(1.00, 0.10, 4.0, 0.01, 0.01))
+        self.speedchooser.connect("format-value", lambda scale, value: ("%.2f %%" % (value*100)))
+        self.speedchooser.set_value_pos(gtk.POS_BOTTOM)
         self.speedchooser.connect("value-changed", self.speedchanged)
 
         self.pitchchooser = mygtk.HScale(gtk.Adjustment(0.0, -24.0, 24.0, 1.0, 1.0, 0.0))
-        self.pitchchooser.connect("format-value", lambda scale, value: ("%.2f" % value).rjust(7))
-        self.pitchchooser.set_value_pos(gtk.POS_LEFT)
+        self.pitchchooser.connect("format-value", lambda scale, value: ("%.2f semitones" % value))
+        self.pitchchooser.set_value_pos(gtk.POS_BOTTOM)
         self.pitchchooser.connect("value-changed", self.pitchchanged)
 
         self.positionchooser = gtk.HScale(gtk.Adjustment(0.0, 0.0, 100.0))
-        self.positionchooser.connect("format-value", lambda scale, value: ("%.1f" % value).rjust(6))
-        self.positionchooser.set_value_pos(gtk.POS_LEFT)
+        self.positionchooser.connect("format-value", lambda scale, value: ("%.2f sec" % value))
+        self.positionchooser.set_value_pos(gtk.POS_BOTTOM)
         self.positionchooser.connect("button-press-event", self.start_seeking)
         self.positionchooser.connect("button-release-event", self.positionchanged)
         self.seeking = False
 
         self.startchooser = gtk.HScale(gtk.Adjustment(0.0, 0, 100.0))
-        self.startchooser.connect("format-value", lambda scale, value: ("%.1f" % value).rjust(6))
-        self.startchooser.set_value_pos(gtk.POS_LEFT)
+        self.startchooser.connect("format-value", lambda scale, value: ("%.2f sec" % value))
+        self.startchooser.set_value_pos(gtk.POS_BOTTOM)
         self.startchooser.connect("button-press-event", self.start_seeking)
         self.startchooser.connect("button-release-event", self.seeked)
 
-        self.endchooser = gtk.HScale(gtk.Adjustment(1.0, 0, 100.0))
-        self.endchooser.connect("format-value", lambda scale, value: ("%.1f" % value).rjust(6))
-        self.endchooser.set_value_pos(gtk.POS_LEFT)
+        self.endchooser = gtk.HScale(gtk.Adjustment(1.0, 0, 100.0, 0.01, 0.01))
+        self.endchooser.connect("format-value", lambda scale, value: ("%.2f sec" % value))
+        self.endchooser.set_value_pos(gtk.POS_BOTTOM)
         self.endchooser.connect("button-press-event", self.start_seeking)
         self.endchooser.connect("button-release-event", self.seeked)
 
@@ -237,19 +244,6 @@ class MainWindow(gtk.Window):
             (_(u"Start Position:"), self.startchooser),
             (_(u"End Position:"), self.endchooser)
         ]), False, False)
-
-        metronome_expander = gtk.Expander("Metronome")
-        self.bpmchooser = mygtk.HScale(gtk.Adjustment(60.0, 1.0, 300.0, 1.0, 1.0, 0.0))
-        self.bpmchooser.set_value_pos(gtk.POS_LEFT)
-        self.offsetchooser = mygtk.HScale(gtk.Adjustment(0.0, 0, 5.0, 0.01))
-        self.offsetchooser.connect("format-value", lambda scale, value: ("%.2f" % value).rjust(7))
-        self.offsetchooser.set_value_pos(gtk.POS_LEFT)
-        metronome_expander.add(mygtk.form([
-            (_(u"BPM:"), self.bpmchooser),
-            (_(u"Offset:"), self.offsetchooser),
-        ]))
-
-        #self.vbox.pack_start(metronome_expander)
 
         buttonbox = gtk.HButtonBox()
         self.vbox.pack_end(buttonbox, False, False)
@@ -292,18 +286,33 @@ class MainWindow(gtk.Window):
 
     def load_config(self):
         self.config_saving = True # do not save while loading
-        if "file" in self.config:
-            #self.filedialog.set_uri(self.config["file"])
-            self.filechooser.set_uri(self.config["file"])
+        lastfile = self.config.get("lastfile")
+        if lastfile:
+            self.filedialog.set_uri(lastfile)
             self.filechanged(None, None)
-            self.speedchooser.set_value(float(self.config["speed"]))
-            self.pitchchooser.set_value(float(self.config["pitch"]))
-            self.startchooser.get_adjustment().set_property("upper", float(self.config["duration"]))
-            self.startchooser.set_value(float(self.config["start"]))
-            self.endchooser.get_adjustment().set_property("upper", float(self.config["duration"]))
-            self.endchooser.set_value(float(self.config["end"]))
-            self.volume_button.set_value(float(self.config["volume"]))
         self.config_saving = False
+
+    def reset_settings(self):
+        self.speedchooser.set_value(1.0)
+        self.pitchchooser.set_value(0.0)
+        self.startchooser.get_adjustment().set_property("upper", 0.0)
+        self.startchooser.set_value(0.0)
+        self.endchooser.get_adjustment().set_property("upper", 0.0)
+        self.endchooser.set_value(0.0)
+
+    def load_file_settings(self, filename):
+        if not self.config or not filename in self.config["files"]:
+            self.reset_settings()
+            return
+        settings = self.config["files"][filename]
+        self.speedchooser.set_value(settings["speed"])
+        self.pitchchooser.set_value(settings["pitch"])
+        self.startchooser.get_adjustment().set_property("upper", settings["duration"])
+        self.startchooser.set_value(settings["start"])
+        self.endchooser.get_adjustment().set_property("upper", settings["duration"])
+        self.endchooser.set_value(settings["end"])
+        self.volume_button.set_value(settings["volume"])
+        print "loaded settings"
 
     def save_config(self):
         """saves the config file with a delay"""
@@ -314,13 +323,18 @@ class MainWindow(gtk.Window):
 
     def save_config_now(self):
         self.config_saving = False
-        self.config["file"] = self.filedialog.get_uri()
-        self.config["speed"] = self.speedchooser.get_value()
-        self.config["pitch"] = self.pitchchooser.get_value()
-        self.config["duration"] = self.startchooser.get_adjustment().get_property("upper")
-        self.config["start"] = self.startchooser.get_value()
-        self.config["end"] = self.endchooser.get_value()
-        self.config["volume"] = self.volume_button.get_value()
+        lastfile = self.filedialog.get_uri()
+        self.config["lastfile"] = lastfile
+        settings = {}
+        settings["speed"] = self.speedchooser.get_value()
+        settings["pitch"] = self.pitchchooser.get_value()
+        settings["duration"] = self.startchooser.get_adjustment().get_property("upper")
+        settings["start"] = self.startchooser.get_value()
+        settings["end"] = self.endchooser.get_value()
+        settings["volume"] = self.volume_button.get_value()
+        self.config.setdefault("files", {})[lastfile] = settings
+        print "saved config", lastfile
+
         self.config.save()
 
     def key_release(self, sender, event):
@@ -339,7 +353,7 @@ class MainWindow(gtk.Window):
                 self, gtk.FILE_CHOOSER_ACTION_SAVE)
         dialog.set_current_name("export.wav")
         if dialog.run() == gtk.RESPONSE_OK:
-            self.pipeline.set_file(self.filechooser.get_uri())
+            self.pipeline.set_file(self.filedialog.get_uri())
             self.foo = self.pipeline.save_file(dialog.get_filename())
         dialog.destroy()
 
@@ -352,6 +366,9 @@ class MainWindow(gtk.Window):
         if response_id == gtk.RESPONSE_OK:
             self.play_button.set_active(False)
         self.save_config()
+        # for what ever reason filedialog.get_uri() is sometimes None until the
+        # mainloop ran through
+        gobject.timeout_add(0, lambda: self.load_file_settings(self.filedialog.get_uri()))
 
     def pipe_time(self, t):
         """convert from song position to pipeline time"""
@@ -385,13 +402,16 @@ class MainWindow(gtk.Window):
         self.pipeline.set_pitch(2**(sender.get_value()/12.0))
         self.save_config()
 
-    def back(self, sender, amount):
+    def back(self, sender, amount=None):
         try:
             position, fmt = self.pipeline.playbin.query_position(TIME_FORMAT, None)
         except gst.QueryError:
             return
-        t = self.song_time(position)-amount
-        if t < 0:
+        if amount:
+            t = self.song_time(position)-amount
+            if t < 0:
+                t = 0
+        else:
             t = 0
         self.seek(t)
 
@@ -446,7 +466,7 @@ class MainWindow(gtk.Window):
         about.set_version(VERSION)
         about.set_authors(["Jonas Wagner"])
         about.set_translator_credits(_("translator-credits"))
-        about.set_copyright("Copyright (c) 2009 Jonas Wagner")
+        about.set_copyright("Copyright (c) 2010 Jonas Wagner")
         about.set_website(WEBSITE)
         about.set_website_label(WEBSITE)
         about.set_license("""

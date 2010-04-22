@@ -11,8 +11,9 @@ Shortcuts
 =========
 The following keyboard shortcuts exist:
  * Alt + P: Play/Pause
- * Alt + e: Rewind (5 seconds)
- * 0-9: Rewind (x seconds)
+ * Alt + e: Rewind
+ * 1-9: Rewind (x seconds)
+ * 0: Rewind to t the beginning
 
 Selecting the audio output device
 =================================
@@ -30,7 +31,7 @@ Generic Installation
 ====================
 To install use you need to have the following libraries installed:
 
- * Python 2.5
+ * Python 2.6 (or 2.5 with simplejson installed)
  * PyGTK >= 2.10
  * PyGST >= 0.10
  * gstreamer >= 0.10 including the soundtouch/pitch element
@@ -89,7 +90,7 @@ If you have any questions or a patch just drop me a mail.
 
 License
 =======
-Copyright (C) 2009  Jonas Wagner
+Copyright (C) 2010  Jonas Wagner
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
