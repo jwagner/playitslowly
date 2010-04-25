@@ -297,8 +297,8 @@ class MainWindow(gtk.Window):
         self.pitchchooser.set_value(0.0)
         self.startchooser.get_adjustment().set_property("upper", 0.0)
         self.startchooser.set_value(0.0)
-        self.endchooser.get_adjustment().set_property("upper", 0.0)
-        self.endchooser.set_value(0.0)
+        self.endchooser.get_adjustment().set_property("upper", 1.0)
+        self.endchooser.set_value(1.0)
 
     def load_file_settings(self, filename):
         if not self.config or not filename in self.config["files"]:
