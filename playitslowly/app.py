@@ -86,7 +86,6 @@ class Config(dict):
         with open(self.path, "wb") as f:
             json.dump(self, f)
 
-
 class Pipeline(gst.Pipeline):
     def __init__(self, sink):
         gst.Pipeline.__init__(self)
@@ -323,7 +322,7 @@ class MainWindow(gtk.Window):
         self.pitchchooser.set_value(settings["pitch"])
         self.startchooser.get_adjustment().set_property("upper", settings["duration"])
         self.startchooser.set_value(settings["start"])
-        self.endchooser.get_adjustment().set_property("upper", settings["duration"])
+        self.endchooser.get_adjustment().set_property("upper", settings["duration"] or 1.0)
         self.endchooser.set_value(settings["end"])
         self.volume_button.set_value(settings["volume"])
         print "loaded settings"
@@ -462,7 +461,9 @@ class MainWindow(gtk.Window):
             self.seek(start)
             return True
 
-        self.positionchooser.set_range(0.0, duration)
+        if self.positionchooser.get_adjustment().get_property("upper") != duration:
+            self.positionchooser.set_range(0.0, duration)
+            self.save_config()
         end = self.endchooser.get_adjustment()
         delta = end.value-end.upper
         if delta <= -duration:
