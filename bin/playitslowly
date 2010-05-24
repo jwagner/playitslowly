@@ -1,2 +1,2 @@
 #!/bin/sh
-python -m playitslowly.app "$@"
+exec python -m playitslowly.app "$@"
