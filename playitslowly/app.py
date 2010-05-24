@@ -205,7 +205,12 @@ class MainWindow(gtk.Window):
 
         self.filedialog = mygtk.FileChooserDialog(None, self, gtk.FILE_CHOOSER_ACTION_OPEN)
         self.filedialog.connect("response", self.filechanged)
+        filechooserhbox = gtk.HBox()
         self.filechooser = gtk.FileChooserButton(self.filedialog)
+        filechooserhbox.pack_start(self.filechooser, True, True)
+        self.recentbutton = gtk.Button(_("Recent Files"))
+        self.recentbutton.connect("clicked", self.show_recent)
+        #filechooserhbox.pack_end(self.recentbutton, False, False)
 
         self.speedchooser = mygtk.HScale(gtk.Adjustment(1.00, 0.10, 4.0, 0.01, 0.01))
         self.speedchooser.connect("format-value", lambda scale, value: ("%.2f %%" % (value*100)))
@@ -237,7 +242,7 @@ class MainWindow(gtk.Window):
         self.endchooser.connect("button-release-event", self.seeked)
 
         self.vbox.pack_start(mygtk.form([
-            (_(u"Audio File:"), self.filechooser),
+            (_(u"Audio File:"), filechooserhbox),
             (_(u"Playback speed:"), self.speedchooser),
             (_(u"Playback Pitch:"), self.pitchchooser),
             (_(u"Position:"), self.positionchooser),
@@ -284,12 +289,21 @@ class MainWindow(gtk.Window):
         self.config_saving = False
         self.load_config()
 
+    def show_recent(self, sender=None):
+        dialog = gtk.RecentChooserDialog(_("Recent Files"), self, None,
+                (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                 gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+        if dialog.run() == gtk.RESPONSE_OK:
+            uri = dialog.get_current_item().get_uri()
+            self.filedialog.set_uri(dialog.get_current_item().get_uri())
+            self.filechanged(None, None, uri=uri)
+
     def load_config(self):
         self.config_saving = True # do not save while loading
         lastfile = self.config.get("lastfile")
         if lastfile:
             self.filedialog.set_uri(lastfile)
-            self.filechanged(None, None)
+            self.filechanged(None, None, uri=lastfile)
         self.config_saving = False
 
     def reset_settings(self):
@@ -357,7 +371,7 @@ class MainWindow(gtk.Window):
             self.foo = self.pipeline.save_file(dialog.get_filename())
         dialog.destroy()
 
-    def filechanged(self, sender, response_id):
+    def filechanged(self, sender, response_id, uri=None):
         # todo: centralise this
         self.play_button.set_sensitive(True)
         self.back_button.set_sensitive(True)
@@ -366,9 +380,12 @@ class MainWindow(gtk.Window):
         if response_id == gtk.RESPONSE_OK:
             self.play_button.set_active(False)
         self.save_config()
-        # for what ever reason filedialog.get_uri() is sometimes None until the
-        # mainloop ran through
-        gobject.timeout_add(0, lambda: self.load_file_settings(self.filedialog.get_uri()))
+        if uri:
+            self.load_file_settings(uri)
+        else:
+            # for what ever reason filedialog.get_uri() is sometimes None until the
+            # mainloop ran through
+            gobject.timeout_add(1, lambda: self.load_file_settings(self.filedialog.get_uri()))
 
     def pipe_time(self, t):
         """convert from song position to pipeline time"""
@@ -507,7 +524,7 @@ def main():
     win = MainWindow(sink, config)
     if arguments:
         win.filechooser.set_filename(arguments[0])
-        win.filechanged(None, None)
+        win.filechanged(None, None, uri="file://" + os.path.abspath(arguments[0]))
     win.show_all()
     gtk.main()
 
