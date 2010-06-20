@@ -47,6 +47,9 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
+# always enable button images
+gtk.settings_get_default().set_long_property("gtk-button-images", True, "main")
+
 from playitslowly import mygtk
 mygtk.install()
 
@@ -366,6 +369,8 @@ class MainWindow(gtk.Window):
         self.config.save()
 
     def key_release(self, sender, event):
+        if not event.state & gtk.gdk.CONTROL_MASK:
+            return
         try:
             val = int(chr(event.keyval))
         except ValueError:
@@ -426,10 +431,12 @@ class MainWindow(gtk.Window):
         self.pipeline.playbin.seek_simple(TIME_FORMAT, gst.SEEK_FLAG_FLUSH, pos)
 
     def speedchanged(self, sender):
+        print "speed changed", sender.get_value()
         self.pipeline.set_speed(sender.get_value())
         self.save_config()
 
     def pitchchanged(self, sender):
+        print "pitch changed", sender.get_value()
         self.pipeline.set_pitch(2**(sender.get_value()/12.0))
         self.save_config()
 

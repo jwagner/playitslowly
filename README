@@ -12,8 +12,7 @@ Shortcuts
 The following keyboard shortcuts exist:
  * Alt + P: Play/Pause
  * Alt + e: Rewind
- * 1-9: Rewind (x seconds)
- * 0: Rewind to t the beginning
+ * CTRL + 1-9: Rewind (x seconds)
 
 Selecting the audio output device
 =================================
