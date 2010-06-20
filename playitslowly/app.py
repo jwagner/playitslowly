@@ -5,7 +5,7 @@ from __future__ import with_statement
 Author: Jonas Wagner
 
 Play it slowly
-Copyright (C) 2010 Jonas Wagner
+Copyright (C) 2009-2010 Jonas Wagner
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import getopt
+import mimetypes
 import os
 import sys
 
@@ -182,7 +183,7 @@ class Pipeline(gst.Pipeline):
         self.set_state(gst.STATE_PLAYING)
 
     def pause(self):
-        self.set_state(gst.STATE_READY)
+        self.set_state(gst.STATE_PAUSED)
 
 class MainWindow(gtk.Window):
     def __init__(self, sink, config):
@@ -195,7 +196,7 @@ class MainWindow(gtk.Window):
         except gobject.GError:
             print "could not load playitslowly icon"
 
-        self.set_default_size(440, 200)
+        self.set_default_size(500, 200)
         self.set_border_width(5)
 
         self.vbox = gtk.VBox()
@@ -207,46 +208,36 @@ class MainWindow(gtk.Window):
         filechooserhbox = gtk.HBox()
         self.filechooser = gtk.FileChooserButton(self.filedialog)
         filechooserhbox.pack_start(self.filechooser, True, True)
-        self.recentbutton = gtk.Button(_("Recent Files"))
+        self.recentbutton = gtk.Button(_("Recent"))
         self.recentbutton.connect("clicked", self.show_recent)
-        #filechooserhbox.pack_end(self.recentbutton, False, False)
+        filechooserhbox.pack_end(self.recentbutton, False, False)
 
-        self.speedchooser = mygtk.HScale(gtk.Adjustment(1.00, 0.10, 4.0, 0.01, 0.01))
-        self.speedchooser.connect("format-value", lambda scale, value: ("%.2f %%" % (value*100)))
-        self.speedchooser.set_value_pos(gtk.POS_BOTTOM)
-        self.speedchooser.connect("value-changed", self.speedchanged)
+        self.speedchooser = mygtk.TextScale(gtk.Adjustment(1.00, 0.10, 4.0, 0.01, 0.01))
+        self.speedchooser.scale.connect("value-changed", self.speedchanged)
 
-        self.pitchchooser = mygtk.HScale(gtk.Adjustment(0.0, -24.0, 24.0, 1.0, 1.0, 0.0))
-        self.pitchchooser.connect("format-value", lambda scale, value: ("%.2f semitones" % value))
-        self.pitchchooser.set_value_pos(gtk.POS_BOTTOM)
-        self.pitchchooser.connect("value-changed", self.pitchchanged)
+        self.pitchchooser = mygtk.TextScale(gtk.Adjustment(0.0, -24.0, 24.0, 1.0, 1.0, 0.0))
+        self.pitchchooser.scale.connect("value-changed", self.pitchchanged)
 
-        self.positionchooser = gtk.HScale(gtk.Adjustment(0.0, 0.0, 100.0))
-        self.positionchooser.connect("format-value", lambda scale, value: ("%.2f sec" % value))
-        self.positionchooser.set_value_pos(gtk.POS_BOTTOM)
-        self.positionchooser.connect("button-press-event", self.start_seeking)
-        self.positionchooser.connect("button-release-event", self.positionchanged)
+        self.positionchooser = mygtk.TextScale(gtk.Adjustment(0.0, 0.0, 100.0))
+        self.positionchooser.scale.connect("button-press-event", self.start_seeking)
+        self.positionchooser.scale.connect("button-release-event", self.positionchanged)
         self.seeking = False
 
-        self.startchooser = gtk.HScale(gtk.Adjustment(0.0, 0, 100.0))
-        self.startchooser.connect("format-value", lambda scale, value: ("%.2f sec" % value))
-        self.startchooser.set_value_pos(gtk.POS_BOTTOM)
-        self.startchooser.connect("button-press-event", self.start_seeking)
-        self.startchooser.connect("button-release-event", self.seeked)
+        self.startchooser = mygtk.TextScale(gtk.Adjustment(0.0, 0, 100.0))
+        self.startchooser.scale.connect("button-press-event", self.start_seeking)
+        self.startchooser.scale.connect("button-release-event", self.seeked)
 
-        self.endchooser = gtk.HScale(gtk.Adjustment(1.0, 0, 100.0, 0.01, 0.01))
-        self.endchooser.connect("format-value", lambda scale, value: ("%.2f sec" % value))
-        self.endchooser.set_value_pos(gtk.POS_BOTTOM)
-        self.endchooser.connect("button-press-event", self.start_seeking)
-        self.endchooser.connect("button-release-event", self.seeked)
+        self.endchooser = mygtk.TextScale(gtk.Adjustment(1.0, 0, 100.0, 0.01, 0.01))
+        self.endchooser.scale.connect("button-press-event", self.start_seeking)
+        self.endchooser.scale.connect("button-release-event", self.seeked)
 
         self.vbox.pack_start(mygtk.form([
-            (_(u"Audio File:"), filechooserhbox),
-            (_(u"Playback speed:"), self.speedchooser),
-            (_(u"Playback Pitch:"), self.pitchchooser),
-            (_(u"Position:"), self.positionchooser),
-            (_(u"Start Position:"), self.startchooser),
-            (_(u"End Position:"), self.endchooser)
+            (_(u"Audio File"), filechooserhbox),
+            (_(u"Playback speed (percent)"), self.speedchooser),
+            (_(u"Playback Pitch (semitones)"), self.pitchchooser),
+            (_(u"Position (seconds)"), self.positionchooser),
+            (_(u"Start Position (seconds)"), self.startchooser),
+            (_(u"End Position (seconds)"), self.endchooser)
         ]), False, False)
 
         buttonbox = gtk.HButtonBox()
@@ -259,7 +250,7 @@ class MainWindow(gtk.Window):
         buttonbox.pack_start(self.play_button)
 
         self.back_button = gtk.Button(gtk.STOCK_MEDIA_REWIND)
-        self.back_button.connect("clicked", self.back, 5.0)
+        self.back_button.connect("clicked", self.back)
         self.back_button.set_use_stock(True)
         self.back_button.set_sensitive(False)
         buttonbox.pack_start(self.back_button)
@@ -288,14 +279,39 @@ class MainWindow(gtk.Window):
         self.config_saving = False
         self.load_config()
 
+    def add_recent(self, uri):
+        manager = gtk.recent_manager_get_default()
+        mime_type = mimetypes.guess_type(uri)[0]
+        app_exec = "playitslowly \"%s\"" % uri
+        manager.add_full(uri, {
+            "app_name": "playitslowly",
+            "app_exec": "playitslowly",
+            "mime_type": mime_type
+        })
+
+
     def show_recent(self, sender=None):
         dialog = gtk.RecentChooserDialog(_("Recent Files"), self, None,
                 (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                  gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-        if dialog.run() == gtk.RESPONSE_OK:
+
+        filter = gtk.RecentFilter()
+        filter.set_name("playitslowly")
+        filter.add_application("playitslowly")
+        dialog.add_filter(filter)
+
+        filter2 = gtk.RecentFilter()
+        filter2.set_name(_("All"))
+        filter2.add_mime_type("audio/*")
+        dialog.add_filter(filter2)
+
+        dialog.set_filter(filter)
+
+        if dialog.run() == gtk.RESPONSE_OK and dialog.get_current_item():
             uri = dialog.get_current_item().get_uri()
             self.filedialog.set_uri(dialog.get_current_item().get_uri())
             self.filechanged(None, None, uri=uri)
+        dialog.destroy()
 
     def load_config(self):
         self.config_saving = True # do not save while loading
@@ -314,6 +330,7 @@ class MainWindow(gtk.Window):
         self.endchooser.set_value(1.0)
 
     def load_file_settings(self, filename):
+        self.add_recent(filename)
         if not self.config or not filename in self.config["files"]:
             self.reset_settings()
             return
@@ -325,7 +342,6 @@ class MainWindow(gtk.Window):
         self.endchooser.get_adjustment().set_property("upper", settings["duration"] or 1.0)
         self.endchooser.set_value(settings["end"])
         self.volume_button.set_value(settings["volume"])
-        print "loaded settings"
 
     def save_config(self):
         """saves the config file with a delay"""
@@ -346,7 +362,6 @@ class MainWindow(gtk.Window):
         settings["end"] = self.endchooser.get_value()
         settings["volume"] = self.volume_button.get_value()
         self.config.setdefault("files", {})[lastfile] = settings
-        print "saved config", lastfile
 
         self.config.save()
 
@@ -484,11 +499,11 @@ class MainWindow(gtk.Window):
         about.set_version(VERSION)
         about.set_authors(["Jonas Wagner"])
         about.set_translator_credits(_("translator-credits"))
-        about.set_copyright("Copyright (c) 2010 Jonas Wagner")
+        about.set_copyright("Copyright (c) 2009-2010 Jonas Wagner")
         about.set_website(WEBSITE)
         about.set_website_label(WEBSITE)
         about.set_license("""
-Copyright (C) 2009 Jonas Wagner
+Copyright (C) 2009-2010 Jonas Wagner
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 3 of the License, or
@@ -524,8 +539,12 @@ def main():
     sink = gst.parse_bin_from_description(sink, True)
     win = MainWindow(sink, config)
     if arguments:
-        win.filechooser.set_filename(arguments[0])
-        win.filechanged(None, None, uri="file://" + os.path.abspath(arguments[0]))
+        uri = arguments[0]
+        if not uri.startswith("file://"):
+            uri = "file://" + os.path.abspath(uri)
+
+        win.filechooser.set_uri(uri)
+        win.filechanged(None, None, uri=uri)
     win.show_all()
     gtk.main()
 

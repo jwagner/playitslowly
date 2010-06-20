@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import gtk, gobject
+import math
 import sys
 
 _ = lambda s: s
@@ -247,6 +248,47 @@ class HScale(gtk.HScale, Scale):
     def __init__(self, *args):
         gtk.HScale.__init__(self, *args)
         Scale.__init__(self)
+
+class TextScale(gtk.HBox):
+    format = "%.2f"
+    size = 6
+    def __init__(self, *args):
+        gtk.HBox.__init__(self)
+        self.from_text = False
+
+        self.entry = gtk.Entry()
+
+        self.scale = HScale(*args)
+        self.scale.set_draw_value(False)
+        self.set_value = self.scale.set_value
+        self.get_value = self.scale.get_value
+        self.get_adjustment = self.scale.get_adjustment
+        self.set_adjustment = self.scale.set_adjustment
+        self.set_range = self.scale.set_range
+
+        #n = len(self.format % self.scale.get_adjustment().get_upper())
+        self.entry.set_width_chars(self.size)
+
+        self.update_text()
+        self.scale.connect("value-changed", self.update_text)
+        self.entry.connect("changed", self.update_scale)
+
+        self.pack_start(self.scale, True, True)
+        self.pack_start(self.entry, False, False)
+
+        self.entry.set_alignment(1.0)
+
+    def update_text(self, sender=None):
+        if not self.from_text:
+            self.entry.set_text(self.format % self.get_value())
+
+    def update_scale(self, sender=None):
+        self.from_text = True
+        try:
+            self.set_value(float(self.entry.get_text()))
+        except ValueError:
+            pass
+        self.from_text = False
 
 class ListStore(gtk.ListStore):
     class Columns(list):
