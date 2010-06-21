@@ -188,6 +188,9 @@ class Pipeline(gst.Pipeline):
     def pause(self):
         self.set_state(gst.STATE_PAUSED)
 
+    def reset(self):
+        self.set_state(gst.STATE_READY)
+
 class MainWindow(gtk.Window):
     def __init__(self, sink, config):
         gtk.Window.__init__(self,gtk.WINDOW_TOPLEVEL)
@@ -398,6 +401,7 @@ class MainWindow(gtk.Window):
         # stop playing
         if response_id == gtk.RESPONSE_OK:
             self.play_button.set_active(False)
+            self.pipeline.reset()
         self.save_config()
         if uri:
             self.load_file_settings(uri)
