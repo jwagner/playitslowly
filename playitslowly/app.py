@@ -221,7 +221,7 @@ class MainWindow(gtk.Window):
         self.speedchooser = mygtk.TextScale(gtk.Adjustment(1.00, 0.10, 4.0, 0.01, 0.01))
         self.speedchooser.scale.connect("value-changed", self.speedchanged)
 
-        self.pitchchooser = mygtk.TextScale(gtk.Adjustment(0.0, -24.0, 24.0, 1.0, 1.0, 0.0))
+        self.pitchchooser = mygtk.TextScale(gtk.Adjustment(0.0, -24.0, 24.0, 1.0, 1.0, 1.0))
         self.pitchchooser.scale.connect("value-changed", self.pitchchanged)
 
         self.positionchooser = mygtk.TextScale(gtk.Adjustment(0.0, 0.0, 100.0))
@@ -239,7 +239,7 @@ class MainWindow(gtk.Window):
 
         self.vbox.pack_start(mygtk.form([
             (_(u"Audio File"), filechooserhbox),
-            (_(u"Playback speed (percent)"), self.speedchooser),
+            (_(u"Playback speed (times)"), self.speedchooser),
             (_(u"Playback Pitch (semitones)"), self.pitchchooser),
             (_(u"Position (seconds)"), self.positionchooser),
             (_(u"Start Position (seconds)"), self.startchooser),
@@ -316,7 +316,7 @@ class MainWindow(gtk.Window):
         if dialog.run() == gtk.RESPONSE_OK and dialog.get_current_item():
             uri = dialog.get_current_item().get_uri()
             self.filedialog.set_uri(dialog.get_current_item().get_uri())
-            self.filechanged(None, None, uri=uri)
+            self.filechanged(uri=uri)
         dialog.destroy()
 
     def load_config(self):
@@ -324,7 +324,7 @@ class MainWindow(gtk.Window):
         lastfile = self.config.get("lastfile")
         if lastfile:
             self.filedialog.set_uri(lastfile)
-            self.filechanged(None, None, uri=lastfile)
+            self.filechanged(uri=lastfile)
         self.config_saving = False
 
     def reset_settings(self):
@@ -393,16 +393,19 @@ class MainWindow(gtk.Window):
             self.foo = self.pipeline.save_file(dialog.get_filename())
         dialog.destroy()
 
-    def filechanged(self, sender, response_id, uri=None):
-        # todo: centralise this
+    def filechanged(self, sender=None, response_id=gtk.RESPONSE_OK, uri=None):
+        if response_id != gtk.RESPONSE_OK:
+            return
+
         self.play_button.set_sensitive(True)
         self.back_button.set_sensitive(True)
         self.save_as_button.set_sensitive(True)
-        # stop playing
-        if response_id == gtk.RESPONSE_OK:
-            self.play_button.set_active(False)
-            self.pipeline.reset()
+        self.play_button.set_active(False)
+
+        self.pipeline.reset()
+        self.seek(0)
         self.save_config()
+
         if uri:
             self.load_file_settings(uri)
         else:
@@ -431,16 +434,15 @@ class MainWindow(gtk.Window):
         self.save_config()
 
     def seek(self, pos):
+        self.positionchooser.set_value(pos)
         pos = self.pipe_time(pos)
         self.pipeline.playbin.seek_simple(TIME_FORMAT, gst.SEEK_FLAG_FLUSH, pos)
 
     def speedchanged(self, sender):
-        print "speed changed", sender.get_value()
         self.pipeline.set_speed(sender.get_value())
         self.save_config()
 
     def pitchchanged(self, sender):
-        print "pitch changed", sender.get_value()
         self.pipeline.set_pitch(2**(sender.get_value()/12.0))
         self.save_config()
 
@@ -555,7 +557,7 @@ def main():
             uri = "file://" + os.path.abspath(uri)
 
         win.filechooser.set_uri(uri)
-        win.filechanged(None, None, uri=uri)
+        win.filechanged(uri=uri)
     win.show_all()
     gtk.main()
 
