@@ -435,7 +435,6 @@ class MainWindow(gtk.Window):
 
     def seek(self, pos):
         if self.positionchooser.get_value() != pos:
-            print pos
             self.positionchooser.set_value(pos)
         pos = self.pipe_time(pos)
         self.pipeline.playbin.seek_simple(TIME_FORMAT, gst.SEEK_FLAG_FLUSH, pos)
