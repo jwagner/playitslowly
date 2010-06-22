@@ -434,7 +434,9 @@ class MainWindow(gtk.Window):
         self.save_config()
 
     def seek(self, pos):
-        self.positionchooser.set_value(pos)
+        if self.positionchooser.get_value() != pos:
+            print pos
+            self.positionchooser.set_value(pos)
         pos = self.pipe_time(pos)
         self.pipeline.playbin.seek_simple(TIME_FORMAT, gst.SEEK_FLAG_FLUSH, pos)
 
@@ -486,7 +488,7 @@ class MainWindow(gtk.Window):
             return False
 
         if position >= end or position < start:
-            self.seek(start)
+            self.seek(start+0.01)
             return True
 
         if self.positionchooser.get_adjustment().get_property("upper") != duration:
