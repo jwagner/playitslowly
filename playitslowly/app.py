@@ -339,6 +339,9 @@ class MainWindow(gtk.Window):
         self.add_recent(filename)
         if not self.config or not filename in self.config["files"]:
             self.reset_settings()
+            self.pipeline.set_file(self.filedialog.get_uri())
+            self.pipeline.pause()
+            gobject.timeout_add(100, self.update_position)
             return
         settings = self.config["files"][filename]
         self.speedchooser.set_value(settings["speed"])
