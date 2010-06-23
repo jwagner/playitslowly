@@ -239,8 +239,8 @@ class MainWindow(gtk.Window):
 
         self.vbox.pack_start(mygtk.form([
             (_(u"Audio File"), filechooserhbox),
-            (_(u"Playback speed (times)"), self.speedchooser),
-            (_(u"Playback Pitch (semitones)"), self.pitchchooser),
+            (_(u"Speed (times)"), self.speedchooser),
+            (_(u"Pitch (semitones)"), self.pitchchooser),
             (_(u"Position (seconds)"), self.positionchooser),
             (_(u"Start Position (seconds)"), self.startchooser),
             (_(u"End Position (seconds)"), self.endchooser)
