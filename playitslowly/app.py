@@ -90,6 +90,7 @@ class Config(dict):
         with open(self.path, "wb") as f:
             json.dump(self, f)
 
+
 class Pipeline(gst.Pipeline):
     def __init__(self, sink):
         gst.Pipeline.__init__(self)
@@ -191,6 +192,7 @@ class Pipeline(gst.Pipeline):
     def reset(self):
         self.set_state(gst.STATE_READY)
 
+
 class MainWindow(gtk.Window):
     def __init__(self, sink, config):
         gtk.Window.__init__(self,gtk.WINDOW_TOPLEVEL)
@@ -224,6 +226,9 @@ class MainWindow(gtk.Window):
         self.pitchchooser = mygtk.TextScale(gtk.Adjustment(0.0, -24.0, 24.0, 1.0, 1.0, 1.0))
         self.pitchchooser.scale.connect("value-changed", self.pitchchanged)
 
+        self.pitchchooser_fine = mygtk.TextScale(gtk.Adjustment(0.0, -50, 50, 1.0, 1.0, 1.0))
+        self.pitchchooser_fine.scale.connect("value-changed", self.pitchchanged)
+
         self.positionchooser = mygtk.TextScale(gtk.Adjustment(0.0, 0.0, 100.0))
         self.positionchooser.scale.connect("button-press-event", self.start_seeking)
         self.positionchooser.scale.connect("button-release-event", self.positionchanged)
@@ -241,6 +246,7 @@ class MainWindow(gtk.Window):
             (_(u"Audio File"), filechooserhbox),
             (_(u"Speed (times)"), self.speedchooser),
             (_(u"Pitch (semitones)"), self.pitchchooser),
+            (_(u"Fine Pitch (cents)"), self.pitchchooser_fine),
             (_(u"Position (seconds)"), self.positionchooser),
             (_(u"Start Position (seconds)"), self.startchooser),
             (_(u"End Position (seconds)"), self.endchooser)
@@ -284,6 +290,15 @@ class MainWindow(gtk.Window):
         self.config = config
         self.config_saving = False
         self.load_config()
+
+    def get_pitch(self):
+        return self.pitchchooser.get_value()+self.pitchchooser_fine.get_value()*0.01
+
+    def set_pitch(self, value):
+        semitones = round(value)
+        cents = round((value-semitones)*100)
+        self.pitchchooser.set_value(semitones)
+        self.pitchchooser_fine.set_value(cents)
 
     def add_recent(self, uri):
         manager = gtk.recent_manager_get_default()
@@ -329,7 +344,7 @@ class MainWindow(gtk.Window):
 
     def reset_settings(self):
         self.speedchooser.set_value(1.0)
-        self.pitchchooser.set_value(0.0)
+        self.set_pitch(0.0)
         self.startchooser.get_adjustment().set_property("upper", 0.0)
         self.startchooser.set_value(0.0)
         self.endchooser.get_adjustment().set_property("upper", 1.0)
@@ -345,7 +360,7 @@ class MainWindow(gtk.Window):
             return
         settings = self.config["files"][filename]
         self.speedchooser.set_value(settings["speed"])
-        self.pitchchooser.set_value(settings["pitch"])
+        self.set_pitch(settings["pitch"])
         self.startchooser.get_adjustment().set_property("upper", settings["duration"])
         self.startchooser.set_value(settings["start"])
         self.endchooser.get_adjustment().set_property("upper", settings["duration"] or 1.0)
@@ -365,7 +380,7 @@ class MainWindow(gtk.Window):
         self.config["lastfile"] = lastfile
         settings = {}
         settings["speed"] = self.speedchooser.get_value()
-        settings["pitch"] = self.pitchchooser.get_value()
+        settings["pitch"] = self.get_pitch()
         settings["duration"] = self.startchooser.get_adjustment().get_property("upper")
         settings["start"] = self.startchooser.get_value()
         settings["end"] = self.endchooser.get_value()
@@ -447,7 +462,7 @@ class MainWindow(gtk.Window):
         self.save_config()
 
     def pitchchanged(self, sender):
-        self.pipeline.set_pitch(2**(sender.get_value()/12.0))
+        self.pipeline.set_pitch(2**(self.get_pitch()/12.0))
         self.save_config()
 
     def back(self, sender, amount=None):
