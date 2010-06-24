@@ -8,12 +8,14 @@ About
 transcribing music. It allows you to play a piece of music
 at a different speed or pitch.
 
+
 Shortcuts
 =========
 The following keyboard shortcuts exist:
  * Alt + P: Play/Pause
  * Alt + e: Rewind
  * CTRL + 1-9: Rewind (x seconds)
+
 
 Selecting the audio output device
 =================================
@@ -26,6 +28,7 @@ or
 playitslowly "--sink=alsasink device=hw:1"
 
 You can also use other sinks than alsa.
+
 
 Generic Installation
 ====================
@@ -43,11 +46,14 @@ To install play it slowly execute: ``python setup.py install`` as
 superuser (root). If you are using a gnome based system like Ubuntu
 you can just doubleclick ``install.sh`` and select run.
 
+
 Distribution Specific Installation Hints
 ========================================
 
 Arch Linux
 ----------
+(this could be obsolete by now)
+
 Arch Linux is missing the pitch element, so you'll have to compile
 yourself::
 
@@ -78,19 +84,16 @@ It should work out of the box!
 
 Hacking
 =======
-If you want to change play it slowly, please use the git repository
-and send me either a patch or your repository url afterwards::
+The source code of play it slowly is hosted on github:
 
-    $ git clone http://29a.ch/git/playitslowly
-    hack...
-    $ git diff > myfeature.patch
+http://github.com/jwagner/playitslowly
 
 If you have any questions or a patch just drop me a mail.
 
 
 License
 =======
-Copyright (C) 2010  Jonas Wagner
+Copyright (C) 2009 - 2010  Jonas Wagner
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -114,8 +117,7 @@ thank me - I would like to hear about it!
 
 Known Issues
 ============
-* The pitch gst-plugin used sometimes crashes when changing the pitch while
-  playing.
+* None
 
 
 Contact
