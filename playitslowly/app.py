@@ -353,6 +353,8 @@ class MainWindow(gtk.Window):
 
     def speedchanged(self, sender):
         self.pipeline.set_speed(sender.get_value())
+        # hack to get gstreamer to calculate the position again
+        self.seek(self.positionchooser.get_value()+0.000001)
         self.save_config()
 
     def pitchchanged(self, sender):
