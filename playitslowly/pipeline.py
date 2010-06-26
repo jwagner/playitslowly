@@ -55,6 +55,17 @@ class Pipeline(gst.Pipeline):
     def set_speed(self, speed):
         self.speedchanger.set_property("tempo", speed)
 
+    def get_speed(self):
+        return self.speedchanger.get_property("tempo")
+
+    def pipe_time(self, t):
+        """convert from song position to pipeline time"""
+        return t/self.get_speed()*1000000000
+
+    def song_time(self, t):
+        """convert from pipetime time to song position"""
+        return t*self.get_speed()/1000000000
+
     def set_pitch(self, pitch):
         self.speedchanger.set_property("pitch", pitch)
 

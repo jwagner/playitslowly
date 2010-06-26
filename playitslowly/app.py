@@ -238,6 +238,7 @@ class MainWindow(gtk.Window):
 
     def reset_settings(self):
         self.speedchooser.set_value(1.0)
+        self.speedchanged()
         self.set_pitch(0.0)
         self.startchooser.get_adjustment().set_property("upper", 0.0)
         self.startchooser.set_value(0.0)
@@ -325,14 +326,6 @@ class MainWindow(gtk.Window):
             # mainloop ran through
             gobject.timeout_add(1, lambda: self.load_file_settings(self.filedialog.get_uri()))
 
-    def pipe_time(self, t):
-        """convert from song position to pipeline time"""
-        return t/self.speedchooser.get_value()*1000000000
-
-    def song_time(self, t):
-        """convert from pipetime time to song position"""
-        return t*self.speedchooser.get_value()/1000000000
-
     def start_seeking(self, sender, foo):
         self.seeking = True
 
@@ -348,13 +341,14 @@ class MainWindow(gtk.Window):
     def seek(self, pos):
         if self.positionchooser.get_value() != pos:
             self.positionchooser.set_value(pos)
-        pos = self.pipe_time(pos)
+        pos = self.pipeline.pipe_time(pos)
         self.pipeline.playbin.seek_simple(TIME_FORMAT, gst.SEEK_FLAG_FLUSH, pos)
 
-    def speedchanged(self, sender):
-        self.pipeline.set_speed(sender.get_value())
+    def speedchanged(self, *args):
+        pos = self.positionchooser.get_value()
+        self.pipeline.set_speed(self.speedchooser.get_value())
         # hack to get gstreamer to calculate the position again
-        self.seek(self.positionchooser.get_value()+0.000001)
+        self.seek(pos)
         self.save_config()
 
     def pitchchanged(self, sender):
@@ -367,7 +361,7 @@ class MainWindow(gtk.Window):
         except gst.QueryError:
             return
         if amount:
-            t = self.song_time(position)-amount
+            t = self.pipeline.song_time(position)-amount
             if t < 0:
                 t = 0
         else:
@@ -391,8 +385,8 @@ class MainWindow(gtk.Window):
             duration, fmt = self.pipeline.playbin.query_duration(TIME_FORMAT, None)
         except gst.QueryError:
             return self.play_button.get_active()
-        position = self.song_time(position)
-        duration = self.song_time(duration)
+        position = self.pipeline.song_time(position)
+        duration = self.pipeline.song_time(duration)
         start = self.startchooser.get_value()
         end = self.endchooser.get_value()
 
@@ -414,7 +408,7 @@ class MainWindow(gtk.Window):
         self.startchooser.set_range(0.0, duration)
         self.endchooser.set_range(0.0, duration)
         self.endchooser.set_value(duration+delta)
-        self.positionchooser.set_value(int(position))
+        self.positionchooser.set_value(position)
         self.positionchooser.queue_draw()
         return self.play_button.get_active()
 
