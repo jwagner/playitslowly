@@ -116,6 +116,9 @@ class MainWindow(gtk.Window):
 
         self.speedchooser = mygtk.TextScale(gtk.Adjustment(1.00, 0.10, 4.0, 0.01, 0.01))
         self.speedchooser.scale.connect("value-changed", self.speedchanged)
+        self.speedchooser.scale.connect("button-press-event", self.speedpress)
+        self.speedchooser.scale.connect("button-release-event", self.speedrelease)
+        self.speedchangeing = False
 
         self.pitchchooser = mygtk.TextScale(gtk.Adjustment(0.0, -24.0, 24.0, 1.0, 1.0, 1.0))
         self.pitchchooser.scale.connect("value-changed", self.pitchchanged)
@@ -184,6 +187,13 @@ class MainWindow(gtk.Window):
         self.config = config
         self.config_saving = False
         self.load_config()
+
+    def speedpress(self, *args):
+        self.speedchangeing = True
+
+    def speedrelease(self, *args):
+        self.speedchangeing = False
+        self.speedchanged()
 
     def get_pitch(self):
         return self.pitchchooser.get_value()+self.pitchchooser_fine.get_value()*0.01
@@ -345,6 +355,8 @@ class MainWindow(gtk.Window):
         self.pipeline.playbin.seek_simple(TIME_FORMAT, gst.SEEK_FLAG_FLUSH, pos)
 
     def speedchanged(self, *args):
+        if self.speedchangeing:
+            return
         pos = self.positionchooser.get_value()
         self.pipeline.set_speed(self.speedchooser.get_value())
         # hack to get gstreamer to calculate the position again
