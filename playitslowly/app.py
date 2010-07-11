@@ -114,7 +114,7 @@ class MainWindow(gtk.Window):
         self.recentbutton.connect("clicked", self.show_recent)
         filechooserhbox.pack_end(self.recentbutton, False, False)
 
-        self.speedchooser = mygtk.TextScale(gtk.Adjustment(1.00, 0.10, 4.0, 0.01, 0.01))
+        self.speedchooser = mygtk.TextScale(gtk.Adjustment(1.00, 0.10, 4.0, 0.05, 0.05))
         self.speedchooser.scale.connect("value-changed", self.speedchanged)
         self.speedchooser.scale.connect("button-press-event", self.speedpress)
         self.speedchooser.scale.connect("button-release-event", self.speedrelease)
