@@ -9,6 +9,10 @@ sys.argv = []
 import gst
 sys.argv = argv
 
+from playitslowly import mygtk
+
+_ = lambda x: x
+
 class Pipeline(gst.Pipeline):
     def __init__(self, sink):
         gst.Pipeline.__init__(self)
