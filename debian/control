@@ -1,0 +1,15 @@
+Source: playitslowly
+Section: universal/gnome
+Priority: optional
+Maintainer: Jonas Wagner
+Build-Depends: debhelper (>=7.0.50~), python-support (>= 0.6), cdbs (>= 0.4.49)
+XS-Python-Version: >=2.5
+Standards-Version: 3.8.4
+
+Package: playitslowly
+Architecture: all
+Homepage: http://29a.ch/playitslowly/
+XB-Python-Version: ${python:Versions}
+Depends: ${misc:Depends}, ${python:Depends}, python-gtk2 (>= 2.10), python (>= 2.6), gstreamer0.10-plugins-bad, python-gst0.10
+Description: Play it slowly is a software for playing back audio
+ Play it slowly is a software to play back audio files at a different speed or pitch. It does also allow you to loop over a certain part of a file. It's intended to help you learn or transcribe songs. It can also play videos thanks to gstreamer. Play it slowly is intended to be used on a GNU/Linux system like Ubuntu. If you'd like to have a windows version, write a comment.
