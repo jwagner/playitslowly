@@ -47,7 +47,7 @@ def ls_r(dir):
 kwargs = {
       'cmdclass': {'install': new_install},
       'name': 'playitslowly',
-      'version': "1.3.0",
+      'version': "1.3.1",
       'description': 'A tool to help you when transcribing music. It allows you to play a piece of music at a different speed or pitch.',
       'author': 'Jonas Wagner',
       'author_email': 'veers@gmx.ch',

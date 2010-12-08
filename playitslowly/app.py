@@ -50,7 +50,7 @@ import gst # this has to be after the Pipeline
 _ = lambda s: s # may be add gettext later
 
 NAME = u"Play it slowly"
-VERSION = "1.3"
+VERSION = "1.3.1"
 WEBSITE = "http://29a.ch/playitslowly/"
 
 if sys.platform == "win32":

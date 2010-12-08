@@ -2,7 +2,7 @@ PYTHON=`which python`
 DESTDIR=/
 BUILDIR=$(CURDIR)/build/playitslowly
 PROJECT=playitslowly
-VERSION=1.3.0
+VERSION=1.3.1
 
 all:
 	@echo "make source - Create source package"
