@@ -1,3 +1,3 @@
 #!/bin/sh
-gksu -u root -- python setup.py install --prefix=/usr
+gksu -u root -- python setup.py install
 zenity --info --text "'Play it slowly' has been installed"
