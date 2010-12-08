@@ -206,13 +206,14 @@ class MainWindow(gtk.Window):
 
     def add_recent(self, uri):
         manager = gtk.recent_manager_get_default()
-        mime_type = mimetypes.guess_type(uri)[0]
         app_exec = "playitslowly \"%s\"" % uri
-        manager.add_full(uri, {
-            "app_name": "playitslowly",
-            "app_exec": "playitslowly",
-            "mime_type": mime_type
-        })
+        mime_type = mimetypes.guess_type(uri)[0]
+        if mime_type:
+            manager.add_full(uri, {
+                "app_name": "playitslowly",
+                "app_exec": "playitslowly",
+                "mime_type": mime_type
+            })
 
 
     def show_recent(self, sender=None):
