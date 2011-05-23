@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import gtk, gobject
 import math
 import sys
+from datetime import timedelta
 
 _ = lambda s: s
 
@@ -248,6 +249,30 @@ class HScale(gtk.HScale, Scale):
     def __init__(self, *args):
         gtk.HScale.__init__(self, *args)
         Scale.__init__(self)
+
+class ClockScale(gtk.VBox):
+    def __init__(self, *args):
+        gtk.VBox.__init__(self)
+        self.clocklabel = gtk.Label()
+        # slider
+        self.scale = HScale(*args)
+        self.scale.set_draw_value(False)
+        self.set_value = self.scale.set_value
+        self.get_value = self.scale.get_value
+        self.get_adjustment = self.scale.get_adjustment
+        self.set_adjustment = self.scale.set_adjustment
+        self.set_range = self.scale.set_range
+
+        self.update_clock()
+        self.scale.connect("value-changed", self.update_clock)
+
+        self.pack_start(self.clocklabel) #, True, True)
+        self.pack_start(self.scale) #, True, True)
+    def update_clock(self, sender=None):
+        self.clocklabel.set_markup(self.format(self.get_value()))
+    def format(self, value):
+        value = str(timedelta(seconds=value))[:7]
+        return '<span size="large" weight="bold">%s</span>' % value
 
 class TextScale(gtk.HBox):
     format = "%.2f"
