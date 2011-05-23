@@ -102,6 +102,8 @@ class MainWindow(gtk.Window):
         self.set_border_width(5)
 
         self.vbox = gtk.VBox()
+	self.accel_group = gtk.AccelGroup()
+	self.add_accel_group(self.accel_group)
 
         self.pipeline = Pipeline(sink)
 
@@ -157,6 +159,8 @@ class MainWindow(gtk.Window):
         self.play_button.set_use_stock(True)
         self.play_button.set_sensitive(False)
         buttonbox.pack_start(self.play_button)
+	# make SPACE a shortcut for play/pause (CTRL-SPC would be better?)
+        self.play_button.add_accelerator("clicked", self.accel_group, ord(' '), 0, ())
 
         self.back_button = gtk.Button(gtk.STOCK_MEDIA_REWIND)
         self.back_button.connect("clicked", self.back)
