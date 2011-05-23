@@ -116,16 +116,16 @@ class MainWindow(gtk.Window):
         self.recentbutton.connect("clicked", self.show_recent)
         filechooserhbox.pack_end(self.recentbutton, False, False)
 
-        self.speedchooser = mygtk.TextScale(gtk.Adjustment(1.00, 0.10, 4.0, 0.05, 0.05))
+        self.speedchooser = mygtk.TextScaleReset(gtk.Adjustment(1.00, 0.10, 4.0, 0.05, 0.05))
         self.speedchooser.scale.connect("value-changed", self.speedchanged)
         self.speedchooser.scale.connect("button-press-event", self.speedpress)
         self.speedchooser.scale.connect("button-release-event", self.speedrelease)
         self.speedchangeing = False
 
-        self.pitchchooser = mygtk.TextScale(gtk.Adjustment(0.0, -24.0, 24.0, 1.0, 1.0, 1.0))
+        self.pitchchooser = mygtk.TextScaleReset(gtk.Adjustment(0.0, -24.0, 24.0, 1.0, 1.0, 1.0))
         self.pitchchooser.scale.connect("value-changed", self.pitchchanged)
 
-        self.pitchchooser_fine = mygtk.TextScale(gtk.Adjustment(0.0, -50, 50, 1.0, 1.0, 1.0))
+        self.pitchchooser_fine = mygtk.TextScaleReset(gtk.Adjustment(0.0, -50, 50, 1.0, 1.0, 1.0))
         self.pitchchooser_fine.scale.connect("value-changed", self.pitchchanged)
 
         self.positionchooser = mygtk.ClockScale(gtk.Adjustment(0.0, 0.0, 100.0))
@@ -133,11 +133,11 @@ class MainWindow(gtk.Window):
         self.positionchooser.scale.connect("button-release-event", self.positionchanged)
         self.seeking = False
 
-        self.startchooser = mygtk.NowScale(self.positionchooser, gtk.Adjustment(0.0, 0, 100.0))
+        self.startchooser = mygtk.TextScaleWithCurPos(self.positionchooser, gtk.Adjustment(0.0, 0, 100.0))
         self.startchooser.scale.connect("button-press-event", self.start_seeking)
         self.startchooser.scale.connect("button-release-event", self.seeked)
 
-        self.endchooser = mygtk.NowScale(self.positionchooser, gtk.Adjustment(1.0, 0, 100.0, 0.01, 0.01))
+        self.endchooser = mygtk.TextScaleWithCurPos(self.positionchooser, gtk.Adjustment(1.0, 0, 100.0, 0.01, 0.01))
         self.endchooser.scale.connect("button-press-event", self.start_seeking)
         self.endchooser.scale.connect("button-release-event", self.seeked)
 
