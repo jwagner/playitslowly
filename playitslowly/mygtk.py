@@ -315,6 +315,18 @@ class TextScale(gtk.HBox):
             pass
         self.from_text = False
 
+# maybe substitute for a decorator?
+class NowScale(TextScale):
+    def __init__(self, slider, *args):
+	TextScale.__init__(self)
+	self.button = gtk.Button(_('Now!'))
+	self.button.connect("clicked", self.update_now_button)
+	self.pack_start(self.button, False, False)
+	self.reorder_child(self.button, 1)
+	self.slider = slider
+    def update_now_button(self, sender=None):
+	self.set_value(self.slider.get_value())
+
 class ListStore(gtk.ListStore):
     class Columns(list):
         def __getattr__(self, name):

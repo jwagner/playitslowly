@@ -133,11 +133,11 @@ class MainWindow(gtk.Window):
         self.positionchooser.scale.connect("button-release-event", self.positionchanged)
         self.seeking = False
 
-        self.startchooser = mygtk.TextScale(gtk.Adjustment(0.0, 0, 100.0))
+        self.startchooser = mygtk.NowScale(self.positionchooser, gtk.Adjustment(0.0, 0, 100.0))
         self.startchooser.scale.connect("button-press-event", self.start_seeking)
         self.startchooser.scale.connect("button-release-event", self.seeked)
 
-        self.endchooser = mygtk.TextScale(gtk.Adjustment(1.0, 0, 100.0, 0.01, 0.01))
+        self.endchooser = mygtk.NowScale(self.positionchooser, gtk.Adjustment(1.0, 0, 100.0, 0.01, 0.01))
         self.endchooser.scale.connect("button-press-event", self.start_seeking)
         self.endchooser.scale.connect("button-release-event", self.seeked)
 
