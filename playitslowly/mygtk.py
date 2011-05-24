@@ -271,8 +271,11 @@ class ClockScale(gtk.VBox):
     def update_clock(self, sender=None):
         self.clocklabel.set_markup(self.format(self.get_value()))
     def format(self, value):
+        ms = str(timedelta(seconds=value))[8:11]
         value = str(timedelta(seconds=value))[:7]
-        return '<span size="large" weight="bold">%s</span>' % value
+        if ms == '':
+            ms = '000'
+        return '<span size="large" weight="bold">%s<span size="medium">.%s</span></span>' % (value, ms)
 
 class TextScale(gtk.HBox):
     format = "%.2f"

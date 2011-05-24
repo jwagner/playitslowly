@@ -141,7 +141,7 @@ class MainWindow(gtk.Window):
         self.endchooser.scale.connect("button-press-event", self.start_seeking)
         self.endchooser.scale.connect("button-release-event", self.seeked)
 
-        self.vbox.pack_start(mygtk.form([(_(u"Choose File:"), filechooserhbox)]))
+        self.vbox.pack_start(filechooserhbox)
         self.vbox.pack_start(self.positionchooser)
         self.vbox.pack_start(mygtk.form([(_(u"Speed (times)"), self.speedchooser),
             (_(u"Pitch (semitones)"), self.pitchchooser),
