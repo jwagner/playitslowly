@@ -328,7 +328,6 @@ class TextScaleReset(TextScale):
         self.reorder_child(self.now_button, 1)
         self.default_value = self.get_value()
     def reset_to_default(self, sender=None):
-        print self.default_value
         self.set_value(self.default_value)
 
 # TODO: substitute for a decorator?
