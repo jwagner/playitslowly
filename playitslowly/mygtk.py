@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import gtk, gobject
 import math
 import sys
+from datetime import timedelta
 
 _ = lambda s: s
 
@@ -249,6 +250,33 @@ class HScale(gtk.HScale, Scale):
         gtk.HScale.__init__(self, *args)
         Scale.__init__(self)
 
+class ClockScale(gtk.VBox):
+    def __init__(self, *args):
+        gtk.VBox.__init__(self)
+        self.clocklabel = gtk.Label()
+        # slider
+        self.scale = HScale(*args)
+        self.scale.set_draw_value(False)
+        self.set_value = self.scale.set_value
+        self.get_value = self.scale.get_value
+        self.get_adjustment = self.scale.get_adjustment
+        self.set_adjustment = self.scale.set_adjustment
+        self.set_range = self.scale.set_range
+
+        self.update_clock()
+        self.scale.connect("value-changed", self.update_clock)
+
+        self.pack_start(self.clocklabel) #, True, True)
+        self.pack_start(self.scale) #, True, True)
+    def update_clock(self, sender=None):
+        self.clocklabel.set_markup(self.format(self.get_value()))
+    def format(self, value):
+        ms = str(timedelta(seconds=value))[8:11]
+        value = str(timedelta(seconds=value))[:7]
+        if ms == '':
+            ms = '000'
+        return '<span size="large" weight="bold">%s<span size="medium">.%s</span></span>' % (value, ms)
+
 class TextScale(gtk.HBox):
     format = "%.2f"
     size = 6
@@ -289,6 +317,30 @@ class TextScale(gtk.HBox):
         except ValueError:
             pass
         self.from_text = False
+
+# TODO: substitute for a decorator?
+class TextScaleReset(TextScale):
+    def __init__(self, *args):
+        TextScale.__init__(self, *args)
+        self.now_button = gtk.Button(_('Reset'))
+        self.now_button.connect("clicked", self.reset_to_default)
+        self.pack_start(self.now_button, False, False)
+        self.reorder_child(self.now_button, 1)
+        self.default_value = self.get_value()
+    def reset_to_default(self, sender=None):
+        self.set_value(self.default_value)
+
+# TODO: substitute for a decorator?
+class TextScaleWithCurPos(TextScale):
+    def __init__(self, slider, *args):
+        TextScale.__init__(self, *args)
+        self.reset_button = gtk.Button(_('Now!'))
+        self.reset_button.connect("clicked", self.update_to_current_position)
+        self.pack_start(self.reset_button, False, False)
+        self.reorder_child(self.reset_button, 1)
+        self.slider = slider
+    def update_to_current_position(self, sender=None):
+        self.set_value(self.slider.get_value())
 
 class ListStore(gtk.ListStore):
     class Columns(list):
