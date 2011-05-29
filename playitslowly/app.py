@@ -102,6 +102,8 @@ class MainWindow(gtk.Window):
         self.set_border_width(5)
 
         self.vbox = gtk.VBox()
+        self.accel_group = gtk.AccelGroup()
+        self.add_accel_group(self.accel_group)
 
         self.pipeline = Pipeline(sink)
 
@@ -114,37 +116,36 @@ class MainWindow(gtk.Window):
         self.recentbutton.connect("clicked", self.show_recent)
         filechooserhbox.pack_end(self.recentbutton, False, False)
 
-        self.speedchooser = mygtk.TextScale(gtk.Adjustment(1.00, 0.10, 4.0, 0.05, 0.05))
+        self.speedchooser = mygtk.TextScaleReset(gtk.Adjustment(1.00, 0.10, 4.0, 0.05, 0.05))
         self.speedchooser.scale.connect("value-changed", self.speedchanged)
         self.speedchooser.scale.connect("button-press-event", self.speedpress)
         self.speedchooser.scale.connect("button-release-event", self.speedrelease)
         self.speedchangeing = False
 
-        self.pitchchooser = mygtk.TextScale(gtk.Adjustment(0.0, -24.0, 24.0, 1.0, 1.0, 1.0))
+        self.pitchchooser = mygtk.TextScaleReset(gtk.Adjustment(0.0, -24.0, 24.0, 1.0, 1.0, 1.0))
         self.pitchchooser.scale.connect("value-changed", self.pitchchanged)
 
-        self.pitchchooser_fine = mygtk.TextScale(gtk.Adjustment(0.0, -50, 50, 1.0, 1.0, 1.0))
+        self.pitchchooser_fine = mygtk.TextScaleReset(gtk.Adjustment(0.0, -50, 50, 1.0, 1.0, 1.0))
         self.pitchchooser_fine.scale.connect("value-changed", self.pitchchanged)
 
-        self.positionchooser = mygtk.TextScale(gtk.Adjustment(0.0, 0.0, 100.0))
+        self.positionchooser = mygtk.ClockScale(gtk.Adjustment(0.0, 0.0, 100.0))
         self.positionchooser.scale.connect("button-press-event", self.start_seeking)
         self.positionchooser.scale.connect("button-release-event", self.positionchanged)
         self.seeking = False
 
-        self.startchooser = mygtk.TextScale(gtk.Adjustment(0.0, 0, 100.0))
+        self.startchooser = mygtk.TextScaleWithCurPos(self.positionchooser, gtk.Adjustment(0.0, 0, 100.0))
         self.startchooser.scale.connect("button-press-event", self.start_seeking)
         self.startchooser.scale.connect("button-release-event", self.seeked)
 
-        self.endchooser = mygtk.TextScale(gtk.Adjustment(1.0, 0, 100.0, 0.01, 0.01))
+        self.endchooser = mygtk.TextScaleWithCurPos(self.positionchooser, gtk.Adjustment(1.0, 0, 100.0, 0.01, 0.01))
         self.endchooser.scale.connect("button-press-event", self.start_seeking)
         self.endchooser.scale.connect("button-release-event", self.seeked)
 
-        self.vbox.pack_start(mygtk.form([
-            (_(u"Audio File"), filechooserhbox),
-            (_(u"Speed (times)"), self.speedchooser),
+        self.vbox.pack_start(filechooserhbox)
+        self.vbox.pack_start(self.positionchooser)
+        self.vbox.pack_start(mygtk.form([(_(u"Speed (times)"), self.speedchooser),
             (_(u"Pitch (semitones)"), self.pitchchooser),
             (_(u"Fine Pitch (cents)"), self.pitchchooser_fine),
-            (_(u"Position (seconds)"), self.positionchooser),
             (_(u"Start Position (seconds)"), self.startchooser),
             (_(u"End Position (seconds)"), self.endchooser)
         ]), False, False)
@@ -157,6 +158,8 @@ class MainWindow(gtk.Window):
         self.play_button.set_use_stock(True)
         self.play_button.set_sensitive(False)
         buttonbox.pack_start(self.play_button)
+        # make SPACE a shortcut for play/pause (CTRL-SPC would be better?)
+        self.play_button.add_accelerator("clicked", self.accel_group, ord(' '), 0, ())
 
         self.back_button = gtk.Button(gtk.STOCK_MEDIA_REWIND)
         self.back_button.connect("clicked", self.back)
