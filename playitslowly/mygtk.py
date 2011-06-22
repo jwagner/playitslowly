@@ -322,11 +322,12 @@ class TextScale(gtk.HBox):
 class TextScaleReset(TextScale):
     def __init__(self, *args):
         TextScale.__init__(self, *args)
-        self.now_button = gtk.Button(_('Reset'))
-        self.now_button.connect("clicked", self.reset_to_default)
-        self.pack_start(self.now_button, False, False)
-        self.reorder_child(self.now_button, 1)
+        self.reset_button = gtk.Button(_('Reset'))
+        self.reset_button.connect("clicked", self.reset_to_default)
+        self.pack_start(self.reset_button, False, False)
+        self.reorder_child(self.reset_button, 1)
         self.default_value = self.get_value()
+	self.add_accelerator = self.reset_button.add_accelerator
     def reset_to_default(self, sender=None):
         self.set_value(self.default_value)
 
@@ -334,11 +335,12 @@ class TextScaleReset(TextScale):
 class TextScaleWithCurPos(TextScale):
     def __init__(self, slider, *args):
         TextScale.__init__(self, *args)
-        self.reset_button = gtk.Button(_('Now!'))
-        self.reset_button.connect("clicked", self.update_to_current_position)
-        self.pack_start(self.reset_button, False, False)
-        self.reorder_child(self.reset_button, 1)
+        self.now_button = gtk.Button(_('Now!'))
+        self.now_button.connect("clicked", self.update_to_current_position)
+        self.pack_start(self.now_button, False, False)
+        self.reorder_child(self.now_button, 1)
         self.slider = slider
+	self.add_accelerator = self.now_button.add_accelerator
     def update_to_current_position(self, sender=None):
         self.set_value(self.slider.get_value())
 
