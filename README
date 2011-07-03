@@ -88,12 +88,13 @@ The source code of play it slowly is hosted on github:
 
 http://github.com/jwagner/playitslowly
 
-If you have any questions or a patch just drop me a mail.
+If you have any questions or a patch just drop me a mail
+or fill a pull request on github.
 
 
 License
 =======
-Copyright (C) 2009 - 2010  Jonas Wagner
+Copyright (C) 2009 - 2011  Jonas Wagner
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
