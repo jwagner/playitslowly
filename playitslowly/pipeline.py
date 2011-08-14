@@ -45,11 +45,14 @@ class Pipeline(gst.Pipeline):
         bus.connect("message", self.on_message)
 
         self.eos = lambda: None
+        self.on_eos_cb = None
 
     def on_message(self, bus, message):
         t = message.type
         if t == gst.MESSAGE_EOS:
             self.eos()
+            if self.on_eos_cb:
+                self.on_eos_cb()
         elif t == gst.MESSAGE_ERROR:
             mygtk.show_error("gstreamer error: %s - %s" % message.parse_error())
 
@@ -125,4 +128,5 @@ class Pipeline(gst.Pipeline):
     def reset(self):
         self.set_state(gst.STATE_READY)
 
-
+    def set_on_eos_cb(self, on_eos_cb):
+        self.on_eos_cb = on_eos_cb
