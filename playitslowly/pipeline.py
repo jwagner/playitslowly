@@ -40,7 +40,7 @@ class Pipeline(gst.Pipeline):
         sink_pad = gst.GhostPad("sink", self.speedchanger.get_pad("sink"))
         bin.add_pad(sink_pad)
         self.playbin.set_property("audio-sink", bin)
-        bus = self.playbin.get_bus()
+        bus = self.get_bus()
         bus.add_signal_watch()
         bus.connect("message", self.on_message)
 
@@ -105,7 +105,7 @@ class Pipeline(gst.Pipeline):
         bin.add_pad(sink_pad)
         playbin.set_property("audio-sink", bin)
 
-        bus = playbin.get_bus()
+        bus = pipeline.get_bus()
         bus.add_signal_watch()
         bus.connect("message", self.on_message)
 
