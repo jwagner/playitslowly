@@ -30,10 +30,11 @@ import gst
 
 
 class AppCli:
-    def __init__(self, filepath, outfilepath, speed):
+    def __init__(self, filepath, outfilepath, speed, sink):
         self.filepath = filepath
         self.outfilepath = outfilepath
         self.speed = speed
+        self.sink = sink
         self.duration = None
         self.close = False
 
@@ -61,46 +62,70 @@ class AppCli:
         else:
             return position
 
-    def save_file_thread(self):
-        sink = gst.parse_bin_from_description("fakesink", True)
-        pipeline = Pipeline(sink)
+    def __prepare_pipeline(self):
+        gstsink = gst.parse_bin_from_description(self.sink, True)
+        pipeline = Pipeline(gstsink)
         pipeline.reset()
         pipeline.set_file('file://' + self.filepath)
         pipeline.set_speed(self.speed)
         pipeline.set_on_eos_cb(self.on_eos)
-        a,b = pipeline.save_file(self.outfilepath)
-        self.pipeline_save = a
+        return pipeline
+
+    def __monitor_progress(self, pipeline):
         while not self.close:
             if not self.duration:
-                d = self.read_duration(self.pipeline_save)
+                d = self.read_duration(pipeline)
                 if d:
                     self.duration = d
                     input_duration = timedelta(seconds = d.total_seconds() * self.speed)
                     print 'Original file duration: %s' %input_duration
-            position = self.read_position(self.pipeline_save)
+            position = self.read_position(pipeline)
             if position:
                 if self.duration:
                     print 'Position: %s/%s %s[%%]' %(position, self.duration, int(position.total_seconds()*100//self.duration.total_seconds()))
                 else:
                     print 'Position: %s/-' %position
             time.sleep(1)
+
+    def save_file_thread(self):
+        pipeline = self.__prepare_pipeline()
+        pipeline_save,b = pipeline.save_file(self.outfilepath)
+        self.__monitor_progress(pipeline_save)
         print 'Done'
-        self.pipeline_save.set_state(gst.STATE_NULL)
+        pipeline_save.set_state(gst.STATE_NULL)
+        self.loop.quit()
+
+    def play_file_thread(self):
+        pipeline = self.__prepare_pipeline()
+        pipeline.play()
+        self.__monitor_progress(pipeline)
+        print 'Done'
+        pipeline.set_state(gst.STATE_NULL)
         self.loop.quit()
 
 
 def main():
-    desc = 'Application changes playback speed and sotres converted file in a wav format. \
-            Suffix with speed information is added to the wav file.'
+    desc = '\
+Application changes playback speed. By default it plays the audio track. \
+When encoder is set (-e option) it sotres audio to the file. \
+Suffix with speed information is added to the output file.'
     parser = OptionParser('playitslowlycli [options] audiofile', description=desc)
+    parser.add_option("--sink", dest="sink",
+                  help="specify gstreamer sink for playback")
     parser.add_option("-s", "--speed", dest="speed",
                   help="playback speed, (value 1 means unchanged)")
+    parser.add_option("-e", "--encoder", dest="encoder",
+                  help="audio encoder (when selected audio is tored to file). Available encoders: wav")
 
     (options, args) = parser.parse_args(sys.argv[1:])
     if options.speed:
         speed = float(options.speed)
     else:
         speed = 1.3
+    if options.sink:
+        sink = options.sink
+    else:
+        sink = 'autoaudiosink'
 
     file_not_found = True
     arg_file = ''
@@ -114,13 +139,16 @@ def main():
         parser.print_help()
         sys.exit(-1)
 
-    outfilepath = os.path.splitext(os.path.split(filepath)[1])[0] + '_s%s.wav' %speed
-    print 'Speed: %s, %s -> %s' %(speed, arg_file, outfilepath)
     loop = glib.MainLoop()
-
-    client = AppCli(filepath,outfilepath, speed)
+    outfilepath = os.path.splitext(os.path.split(filepath)[1])[0] + '_s%s.wav' %speed
+    client = AppCli(filepath,outfilepath, speed, sink)
     client.set_loop(loop)
-    thread.start_new_thread(client.save_file_thread, ())
+    if options.encoder:
+        print 'Saving to file, speed: %s, %s -> %s' %(speed, arg_file, outfilepath)
+        thread.start_new_thread(client.save_file_thread, ())
+    else:
+        print 'Playing, speed: %s, %s' %(speed, arg_file)
+        thread.start_new_thread(client.play_file_thread, ())
     gobject.threads_init()
     loop.run()
 
