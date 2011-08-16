@@ -105,7 +105,15 @@ class MainWindow(gtk.Window):
         self.accel_group = gtk.AccelGroup()
         self.add_accel_group(self.accel_group)
 
-        self.pipeline = Pipeline(sink)
+        try:
+            self.pipeline = Pipeline(sink)
+        except gst.ElementNotFoundError:
+            #TODO Need better error handling because other gstreamer elements could also be missing.
+            mygtk.show_error(_(u"You need to install the gstreamer soundtouch elements for "
+                    "play it slowly to. They are part of gstreamer-plugins-bad. Consult the "
+                    "README if you need more information.")).run()
+            raise SystemExit()
+        self.pipeline.set_on_error_cb(self.on_error_cb)
 
         self.filedialog = mygtk.FileChooserDialog(None, self, gtk.FILE_CHOOSER_ACTION_OPEN)
         self.filedialog.connect("response", self.filechanged)
@@ -194,6 +202,9 @@ class MainWindow(gtk.Window):
         self.config = config
         self.config_saving = False
         self.load_config()
+
+    def on_error_cb(self, error):
+        mygtk.show_error(error)
 
     def speedpress(self, *args):
         self.speedchangeing = True
