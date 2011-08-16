@@ -9,8 +9,6 @@ sys.argv = []
 import gst
 sys.argv = argv
 
-from playitslowly import mygtk
-
 _ = lambda x: x
 
 class Pipeline(gst.Pipeline):
@@ -20,14 +18,8 @@ class Pipeline(gst.Pipeline):
         self.add(self.playbin)
 
         bin = gst.Bin("speed-bin")
-        try:
-            self.speedchanger = gst.element_factory_make("pitch")
-        except gst.ElementNotFoundError:
-            mygtk.show_error(_(u"You need to install the gstreamer soundtouch elements for "
-                    "play it slowly to. They are part of gstreamer-plugins-bad. Consult the "
-                    "README if you need more information.")).run()
-            raise SystemExit()
 
+        self.speedchanger = gst.element_factory_make("pitch")
         bin.add(self.speedchanger)
 
         self.audiosink = sink
@@ -46,6 +38,7 @@ class Pipeline(gst.Pipeline):
 
         self.eos = lambda: None
         self.on_eos_cb = None
+        self.on_error_cb = None
 
     def on_message(self, bus, message):
         t = message.type
@@ -54,7 +47,8 @@ class Pipeline(gst.Pipeline):
             if self.on_eos_cb:
                 self.on_eos_cb()
         elif t == gst.MESSAGE_ERROR:
-            mygtk.show_error("gstreamer error: %s - %s" % message.parse_error())
+            if self.on_error_cb:
+                self.on_error_cb("gstreamer error: %s - %s" % message.parse_error())
 
     def set_volume(self, volume):
         self.playbin.set_property("volume", volume)
@@ -130,3 +124,6 @@ class Pipeline(gst.Pipeline):
 
     def set_on_eos_cb(self, on_eos_cb):
         self.on_eos_cb = on_eos_cb
+
+    def set_on_error_cb(self, on_error_cb):
+        self.on_error_cb = on_error_cb
