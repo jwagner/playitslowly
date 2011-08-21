@@ -11,6 +11,16 @@ sys.argv = argv
 
 _ = lambda x: x
 
+class Encoder():
+    def __init__(self, gst_encoder, file_extension):
+        self.gst_encoder = gst_encoder
+        self.file_extension = file_extension
+
+pipeline_encoders = {
+    'wav': Encoder('wavenc', 'wav'),
+    'aac': Encoder('faac', 'aac')    }
+
+
 class Pipeline(gst.Pipeline):
     def __init__(self, sink):
         gst.Pipeline.__init__(self)
@@ -39,6 +49,7 @@ class Pipeline(gst.Pipeline):
         self.eos = lambda: None
         self.on_eos_cb = None
         self.on_error_cb = None
+        self.encoder = pipeline_encoders['wav']
 
     def on_message(self, bus, message):
         t = message.type
@@ -87,7 +98,9 @@ class Pipeline(gst.Pipeline):
         audioconvert = gst.element_factory_make("audioconvert")
         bin.add(audioconvert)
 
-        encoder = gst.element_factory_make("wavenc")
+        encoder = gst.element_factory_make(self.encoder.gst_encoder)
+        if 'faac' == self.encoder.gst_encoder:
+            encoder.set_property('outputformat', 1)
         bin.add(encoder)
 
         filesink = gst.element_factory_make("filesink")
@@ -109,6 +122,9 @@ class Pipeline(gst.Pipeline):
         pipeline.set_state(gst.STATE_PLAYING)
 
         return (pipeline, playbin)
+
+    def set_encoder(self, encoder):
+        self.encoder = encoder
 
     def set_file(self, uri):
         self.playbin.set_property("uri", uri)
