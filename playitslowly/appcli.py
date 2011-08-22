@@ -27,6 +27,7 @@ from optparse import OptionParser
 from datetime import timedelta
 from playitslowly.pipeline import Pipeline, pipeline_encoders
 import gst
+import string
 
 
 class AppCli:
@@ -106,10 +107,7 @@ class AppCli:
 
 
 def main():
-    encoders_keys_str = ''
-    for key in pipeline_encoders.keys():
-        encoders_keys_str += ', ' + pipeline_encoders[key].file_extension
-    encoders_keys_str = encoders_keys_str[2:]   #Cut first ' ,'
+    encoders_keys_str = string.join(pipeline_encoders.keys(), sep=', ')
     desc = '\
 Application changes playback speed. By default it plays the audio track. \
 When encoder is set (-e option) it sotres audio to the file. \
