@@ -470,16 +470,25 @@ GNU General Public License for more details.
         about.run()
         about.destroy()
 
+def print_help():
+    print "Usage: playitslowly [OPTIONS]... [FILE]"
+    print "Options:"
+    print '--sink=sink      specify gstreamer sink for playback'
+
+
 def main():
     sink = "autoaudiosink"
     if in_pathlist("gstreamer-properties"):
         sink = "gconfaudiosink"
-    options, arguments = getopt.getopt(sys.argv[1:], "h", ["help", "sink="])
+    try:
+        options, arguments = getopt.getopt(sys.argv[1:], "h", ["help", "sink="])
+    except getopt.GetoptError as er:
+        print er
+        print_help()
+        sys.exit()
     for option, argument in options:
         if option in ("-h", "--help"):
-            print "Usage: playitslowly [OPTIONS]... [FILE]"
-            print "Options:"
-            print '--sink=sink      specify gstreamer sink for playback'
+            print_help()
             sys.exit()
         elif option == "--sink":
             print "sink", argument
