@@ -37,6 +37,7 @@ gobject.threads_init()
 import pygtk
 pygtk.require('2.0')
 import gtk
+import gio
 
 # always enable button images
 gtk.settings_get_default().set_long_property("gtk-button-images", True, "main")
