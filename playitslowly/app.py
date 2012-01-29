@@ -5,7 +5,7 @@ from __future__ import with_statement
 Author: Jonas Wagner
 
 Play it slowly
-Copyright (C) 2009 - 2011 Jonas Wagner
+Copyright (C) 2009 - 2012 Jonas Wagner
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -109,8 +109,10 @@ class MainWindow(gtk.Window):
 
         self.filedialog = mygtk.FileChooserDialog(None, self, gtk.FILE_CHOOSER_ACTION_OPEN)
         self.filedialog.connect("response", self.filechanged)
+        self.filedialog.set_local_only(False)
         filechooserhbox = gtk.HBox()
         self.filechooser = gtk.FileChooserButton(self.filedialog)
+        self.filechooser.set_local_only(False)
         filechooserhbox.pack_start(self.filechooser, True, True)
         self.recentbutton = gtk.Button(_("Recent"))
         self.recentbutton.connect("clicked", self.show_recent)
@@ -214,13 +216,14 @@ class MainWindow(gtk.Window):
     def add_recent(self, uri):
         manager = gtk.recent_manager_get_default()
         app_exec = "playitslowly \"%s\"" % uri
-        mime_type = mimetypes.guess_type(uri)[0]
+        mime_type, certain = gio.content_type_guess(uri, want_uncertain=True)
         if mime_type:
             manager.add_full(uri, {
                 "app_name": "playitslowly",
                 "app_exec": "playitslowly",
                 "mime_type": mime_type
             })
+            print app_exec, mime_type
 
 
     def show_recent(self, sender=None):
@@ -237,6 +240,8 @@ class MainWindow(gtk.Window):
         filter2.set_name(_("All"))
         filter2.add_mime_type("audio/*")
         dialog.add_filter(filter2)
+
+        dialog.set_local_only(False)
 
         dialog.set_filter(filter)
 
