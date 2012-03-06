@@ -53,7 +53,7 @@ kwargs = {
       'author_email': 'veers@gmx.ch',
       'url': 'http://29a.ch/playitslowly/',
       'packages': ['playitslowly'],
-      'scripts': ['bin/playitslowly'],
+      'scripts': ['bin/playitslowly', 'bin/playitslowlycli'],
       'options': {'py2exe':{
           'packages': 'encodings',
           'includes': 'cairo, pango, pangocairo, atk, gobject',

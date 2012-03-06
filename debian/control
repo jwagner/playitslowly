@@ -1,5 +1,5 @@
 Source: playitslowly
-Section: universal/gnome
+Section: sound
 Priority: optional
 Maintainer: Jonas Wagner <veers@gmx.ch>
 Build-Depends: debhelper (>=7.0.50~), python-support (>= 0.6), cdbs (>= 0.4.49)

@@ -8,6 +8,10 @@ About
 transcribing music. It allows you to play a piece of music
 at a different speed or pitch.
 
+Package provides two applications:
+ * playitslowly - UI application based on gtk
+ * playitslowlycli - console application
+
 
 Shortcuts
 =========
