@@ -16,7 +16,10 @@ _ = lambda x: x
 class Pipeline(gst.Pipeline):
     def __init__(self, sink):
         gst.Pipeline.__init__(self)
-        self.playbin = gst.element_factory_make("playbin")
+        try:
+            self.playbin = gst.element_factory_make("playbin2")
+        except gst.ElementNotFoundError:
+            self.playbin = gst.element_factory_make("playbin")
         self.add(self.playbin)
 
         bin = gst.Bin("speed-bin")
