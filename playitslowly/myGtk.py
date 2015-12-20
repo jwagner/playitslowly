@@ -99,11 +99,11 @@ def make_table(widgets):
         for x, widget in enumerate(row):
             if widget:
                 table.attach(widget, x, x+1, y, y+1,
-                        xoptions=Gtk.EXPAND|Gtk.FILL, xpadding=4, ypadding=4)
+                        xoptions=Gtk.AttachOptions.EXPAND|Gtk.AttachOptions.FILL, xpadding=4, ypadding=4)
     return table
 
 class Gtklock:
-    """A context manger for the Gtk.gdk.threads_*
+    """A context manger for the Gdk.threads_*
 
     can be used like this
     >> with Gtklock:
@@ -111,11 +111,11 @@ class Gtklock:
     """
     @staticmethod
     def __enter__():
-        Gtk.gdk.threads_enter()
+        Gdk.threads_enter()
 
     @staticmethod
     def __exit__(*args):
-        Gtk.gdk.threads_leave()
+        Gdk.threads_leave()
 
 def Gtk_yield():
     """process all the peding events in the mainloop"""
@@ -124,7 +124,7 @@ def Gtk_yield():
 
 class IconButton(Gtk.Button):
     def __init__(self, icon, size=None, label=None):
-        Gtk.Button.__init__(self)
+        GObject.GObject.__init__(self)
         self.size = size or Gtk.IconSize.BUTTON
         self.hbox = Gtk.HBox()
         self.add(self.hbox)
@@ -137,24 +137,24 @@ class IconButton(Gtk.Button):
         if self.label:
             self.label.set_text(label)
         else:
-            self.label = Gtk.Label(label)
-            self.hbox.pack_end(self.label)
+            self.label = Gtk.Label(label=label)
+            self.hbox.pack_end(self.label, True, True, 0)
 
     def set_icon(self, icon):
         if self.img:
             self.img.set_from_pixbuf(iconfactory.get_icon(icon, self.size))
         else:
             self.img = iconfactory.get_image(icon, self.size)
-            self.hbox.pack_start(self.img)
+            self.hbox.pack_start(self.img, True, True, 0)
         self._icon = icon
     icon = property(lambda self: self._icon, set_icon)
 
 class IconMenuItem(Gtk.ImageMenuItem):
     icon_size = Gtk.icon_size_lookup(Gtk.IconSize.MENU)[0]
     def __init__(self, icon, text):
-        Gtk.ImageMenuItem.__init__(self)
+        GObject.GObject.__init__(self)
         self.set_image(iconfactory.get_image(icon, self.icon_size))
-        label = Gtk.Label(text)
+        label = Gtk.Label(label=text)
         label.set_alignment(0.0, 0.5)
         self.add(label)
         self.show_all()
@@ -164,7 +164,7 @@ def show_error(msg):
     dialog = Gtk.MessageDialog(type=Gtk.MessageType.ERROR, message_format=str(msg),
             buttons=Gtk.ButtonsType.OK)
     dialog.set_title(_("Error"))
-    # dialog.run() - this breaks when called from gobject.idle_add
+    # dialog.run() - this breaks when called from GObject.idle_add
     # dialog.hide()
     # dialog.destroy
     dialog.show()
@@ -196,10 +196,10 @@ def make_menu(entries, menu):
 def form(rows):
     table = Gtk.Table(len(rows), 2, False)
     for y, (text, widget) in enumerate(rows):
-        label = Gtk.Label(text)
+        label = Gtk.Label(label=text)
         label.set_alignment(0.0, 0.5)
-        table.attach(label, 0, 1, y, y+1, xoptions=Gtk.SHRINK|Gtk.FILL, xpadding=4)
-        table.attach(widget, 1, 2, y, y+1, xoptions=Gtk.EXPAND|Gtk.FILL, xpadding=4)
+        table.attach(label, 0, 1, y, y+1, xoptions=Gtk.AttachOptions.SHRINK|Gtk.AttachOptions.FILL, xpadding=4)
+        table.attach(widget, 1, 2, y, y+1, xoptions=Gtk.AttachOptions.EXPAND|Gtk.AttachOptions.FILL, xpadding=4)
     return table
 
 def make_table(widgets):
@@ -208,7 +208,7 @@ def make_table(widgets):
     table = Gtk.Table(len(widgets), columns, False)
     for y, row in enumerate(widgets):
         for x, widget in enumerate(row):
-            table.attach(widget, x, x+1, y, y+1, xoptions=Gtk.EXPAND|Gtk.FILL,
+            table.attach(widget, x, x+1, y, y+1, xoptions=Gtk.AttachOptions.EXPAND|Gtk.AttachOptions.FILL,
                     xpadding=4, ypadding=4)
     return table
 
@@ -233,12 +233,13 @@ class VScale(Gtk.VScale, Scale):
 
 class HScale(Gtk.HScale, Scale):
     def __init__(self, *args):
-        super(HScale, self).__init__(self, *args)
+        Gtk.HScale.__init__(self)
         Scale.__init__(self)
+        self.set_adjustment(*args)
 
 class ClockScale(Gtk.VBox):
     def __init__(self, *args):
-        Gtk.VBox.__init__(self)
+        GObject.GObject.__init__(self)
         self.clocklabel = Gtk.Label()
         # slider
         self.scale = HScale(*args)
@@ -267,12 +268,12 @@ class TextScale(Gtk.HBox):
     format = "%.2f"
     size = 6
     def __init__(self, *args):
-        Gtk.HBox.__init__(self)
+        GObject.GObject.__init__(self)
         self.from_text = False
 
         self.entry = Gtk.Entry()
 
-        self.scale = HScale(*args)
+        self.scale = Gtk.Scale.new(Gtk.Orientation.HORIZONTAL, *args)
         self.scale.set_draw_value(False)
         self.set_value = self.scale.set_value
         self.get_value = self.scale.get_value
@@ -287,8 +288,8 @@ class TextScale(Gtk.HBox):
         self.scale.connect("value-changed", self.update_text)
         self.entry.connect("changed", self.update_scale)
 
-        self.pack_start(self.scale, True, True)
-        self.pack_start(self.entry, False, False)
+        self.pack_start(self.scale, True, True, 0)
+        self.pack_start(self.entry, False, False, 0)
 
         self.entry.set_alignment(1.0)
 
@@ -308,9 +309,9 @@ class TextScale(Gtk.HBox):
 class TextScaleReset(TextScale):
     def __init__(self, *args):
         TextScale.__init__(self, *args)
-        self.reset_button = Gtk.Button.new(_('Reset'))
+        self.reset_button = Gtk.Button.new_with_label(_('Reset'))
         self.reset_button.connect("clicked", self.reset_to_default)
-        self.pack_start(self.reset_button, False, False)
+        self.pack_start(self.reset_button, False, False, 0)
         self.reorder_child(self.reset_button, 1)
         self.default_value = self.get_value()
 	self.add_accelerator = self.reset_button.add_accelerator
@@ -323,7 +324,7 @@ class TextScaleWithCurPos(TextScale):
         TextScale.__init__(self, *args)
         self.now_button = Gtk.Button(_('Now!'))
         self.now_button.connect("clicked", self.update_to_current_position)
-        self.pack_start(self.now_button, False, False)
+        self.pack_start(self.now_button, False, False, 0)
         self.reorder_child(self.now_button, 1)
         self.slider = slider
 	self.add_accelerator = self.now_button.add_accelerator
@@ -342,7 +343,7 @@ class ListStore(Gtk.ListStore):
             return [valuedict.get(key) for key in self]
 
     def __init__(self, **kwargs):
-        Gtk.ListStore.__init__(self, *kwargs.values())
+        GObject.GObject.__init__(self, *kwargs.values())
         self.columns = ListStore.Columns(kwargs.keys())
 
     def serialize(self):

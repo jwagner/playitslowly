@@ -25,7 +25,7 @@ class Pipeline(Gst.Pipeline):
         bin = Gst.Bin()
         self.speedchanger = Gst.ElementFactory.make("pitch")
         if self.speedchanger is None:
-            mygtk.show_error(_(u"You need to install the Gstreamer soundtouch elements for "
+            myGtk.show_error(_(u"You need to install the Gstreamer soundtouch elements for "
                     "play it slowly to. They are part of Gstreamer-plugins-bad. Consult the "
                     "README if you need more information.")).run()
             raise SystemExit()
@@ -52,10 +52,10 @@ class Pipeline(Gst.Pipeline):
 
     def on_message(self, bus, message):
         t = message.type
-        if t == Gst.MESSAGE_EOS:
+        if t == Gst.MessageType.EOS:
             self.eos()
-        elif t == Gst.MESSAGE_ERROR:
-            mygtk.show_error("Gstreamer error: %s - %s" % message.parse_error())
+        elif t == Gst.MessageType.ERROR:
+            myGtk.show_error("Gstreamer error: %s - %s" % message.parse_error())
 
     def set_volume(self, volume):
         self.playbin.set_property("volume", volume)
@@ -105,7 +105,7 @@ class Pipeline(Gst.Pipeline):
         Gst.element_link_many(audioconvert, encoder)
         Gst.element_link_many(encoder, filesink)
 
-        sink_pad = Gst.GhostPad("sink", speedchanger.get_static_pad("sink"))
+        sink_pad = Gst.GhostPad.new("sink", speedchanger.get_static_pad("sink"))
         bin.add_pad(sink_pad)
         playbin.set_property("audio-sink", bin)
 
@@ -113,7 +113,7 @@ class Pipeline(Gst.Pipeline):
         bus.add_signal_watch()
         bus.connect("message", self.on_message)
 
-        pipeline.set_state(Gst.STATE_PLAYING)
+        pipeline.set_state(Gst.State.PLAYING)
 
         return (pipeline, playbin)
 
@@ -121,12 +121,12 @@ class Pipeline(Gst.Pipeline):
         self.playbin.set_property("uri", uri)
 
     def play(self):
-        self.set_state(Gst.STATE_PLAYING)
+        self.set_state(Gst.State.PLAYING)
 
     def pause(self):
-        self.set_state(Gst.STATE_PAUSED)
+        self.set_state(Gst.State.PAUSED)
 
     def reset(self):
-        self.set_state(Gst.STATE_READY)
+        self.set_state(Gst.State.READY)
 
 
