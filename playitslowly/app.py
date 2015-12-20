@@ -145,7 +145,7 @@ class MainWindow(Gtk.Window):
         self.endchooser.add_accelerator("clicked", self.accel_group, ord(']'), Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE)
         self.endchooser.add_accelerator("clicked", self.accel_group, ord(']'), 0, Gtk.AccelFlags.VISIBLE)
 
-        self.vbox.pack_start(filechooserhbox, True, True, 0)
+        self.vbox.pack_start(filechooserhbox, False, False, 0)
         self.vbox.pack_start(self.positionchooser, True, True, 0)
         self.vbox.pack_start(myGtk.form([(_(u"Speed (times, True, True, 0)"), self.speedchooser),
             (_(u"Pitch (semitones)"), self.pitchchooser),
@@ -214,13 +214,13 @@ class MainWindow(Gtk.Window):
     def add_recent(self, uri):
         manager = Gtk.RecentManager.get_default()
         app_exec = "playitslowly \"%s\"" % uri
-        mime_type, certain = Gio.content_type_guess(uri, want_uncertain=True)
+        mime_type, certain = Gio.content_type_guess(uri)
         if mime_type:
-            manager.add_full(uri, {
-                "app_name": "playitslowly",
-                "app_exec": "playitslowly",
-                "mime_type": mime_type
-            })
+            recent_data = Gtk.RecentData()
+            recent_data.app_name = "playitslowly"
+            recent_data.app_exec = "playitslowly"
+            recent_data.mime_type = mime_type
+            manager.add_full(uri, recent_data)
             print app_exec, mime_type
 
 
@@ -328,6 +328,7 @@ class MainWindow(Gtk.Window):
         dialog.destroy()
 
     def filechanged(self, sender=None, response_id=Gtk.ResponseType.OK, uri=None):
+        print "file changed", uri
         if response_id != Gtk.ResponseType.OK:
             return
 
@@ -359,11 +360,11 @@ class MainWindow(Gtk.Window):
         self.seeking = False
         self.save_config()
 
-    def seek(self, pos):
+    def seek(self, pos=0):
         if self.positionchooser.get_value() != pos:
             self.positionchooser.set_value(pos)
         pos = self.pipeline.pipe_time(pos)
-        self.pipeline.playbin.seek_simple(TIME_FORMAT, Gst.SeekFlags.FLUSH, pos)
+        self.pipeline.playbin.seek_simple(TIME_FORMAT, Gst.SeekFlags.FLUSH, pos or 0)
 
     def speedchanged(self, *args):
         if self.speedchangeing:
@@ -403,13 +404,13 @@ class MainWindow(Gtk.Window):
         """update the position of the scales and pipeline"""
         if self.seeking:
             return self.play_button.get_active()
-        try:
-            position, fmt = self.pipeline.playbin.query_position(TIME_FORMAT, None)
-            duration, fmt = self.pipeline.playbin.query_duration(TIME_FORMAT, None)
-        except Gst.QueryError:
+
+        position_query = self.pipeline.playbin.query_position(TIME_FORMAT)
+        duration_query = self.pipeline.playbin.query_duration(TIME_FORMAT)
+        if position_query is None or duration_query is None:
             return self.play_button.get_active()
-        position = self.pipeline.song_time(position)
-        duration = self.pipeline.song_time(duration)
+        position = self.pipeline.song_time(position_query[0])
+        duration = self.pipeline.song_time(duration_query[0])
         start = self.startchooser.get_value()
         end = self.endchooser.get_value()
 
@@ -425,7 +426,7 @@ class MainWindow(Gtk.Window):
             self.positionchooser.set_range(0.0, duration)
             self.save_config()
         end = self.endchooser.get_adjustment()
-        delta = end.value-end.upper
+        delta = end.get_value() - end.get_upper()
         if delta <= -duration:
             delta = 0
         self.startchooser.set_range(0.0, duration)
@@ -481,7 +482,7 @@ def main():
         config.load()
     except IOError:
         pass
-    sink = Gst.ElementFactory.make(sink, None)
+    #sink = Gst.ElementFactory.make(sink, "sink")
     win = MainWindow(sink, config)
     if arguments:
         uri = arguments[0]

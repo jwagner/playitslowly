@@ -2,7 +2,7 @@
 Author: Jonas Wagner
 
 Play it slowly
-Copyright (C) 2009 Jonas Wagner
+Copyright (C) 2015 Jonas Wagner
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
