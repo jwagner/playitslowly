@@ -31,22 +31,19 @@ try:
 except ImportError:
     import simplejson as json
 
-import gobject
-gobject.threads_init()
+from playitslowly.pipeline import Pipeline
 
-import pygtk
-pygtk.require('2.0')
-import gtk
-import gio
+from gi.repository import Gtk, GObject, Gst, Gio
+
+GObject.threads_init()
+Gst.init(None)
 
 # always enable button images
-gtk.settings_get_default().set_long_property("gtk-button-images", True, "main")
+#Gtk.settings_get_default().set_long_property("Gtk-button-images", True, "main")
 
-from playitslowly import mygtk
-mygtk.install()
+from playitslowly import myGtk
+myGtk.install()
 
-from playitslowly.pipeline import Pipeline
-import gst # this has to be after the Pipeline
 
 _ = lambda s: s # may be add gettext later
 
@@ -62,7 +59,7 @@ else:
         os.mkdir(XDG_CONFIG_HOME)
     CONFIG_PATH = os.path.join(XDG_CONFIG_HOME, "playitslowly.json")
 
-TIME_FORMAT = gst.Format(gst.FORMAT_TIME)
+TIME_FORMAT = Gst.Format(Gst.Format.TIME)
 
 def in_pathlist(filename, paths = os.environ.get("PATH").split(os.pathsep)):
     """check if an application is somewhere in $PATH"""
@@ -88,79 +85,79 @@ class Config(dict):
             json.dump(self, f)
 
 
-class MainWindow(gtk.Window):
+class MainWindow(Gtk.Window):
     def __init__(self, sink, config):
-        gtk.Window.__init__(self,gtk.WINDOW_TOPLEVEL)
+        Gtk.Window.__init__(self,Gtk.WindowType.TOPLEVEL)
 
         self.set_title(NAME)
 
         try:
-            self.set_icon(mygtk.iconfactory.get_icon("playitslowly", 128))
+            self.set_icon(myGtk.iconfactory.get_icon("playitslowly", 128))
         except gobject.GError:
             print "could not load playitslowly icon"
 
         self.set_default_size(500, 200)
         self.set_border_width(5)
 
-        self.vbox = gtk.VBox()
-        self.accel_group = gtk.AccelGroup()
+        self.vbox = Gtk.VBox()
+        self.accel_group = Gtk.AccelGroup()
         self.add_accel_group(self.accel_group)
 
         self.pipeline = Pipeline(sink)
 
-        self.filedialog = mygtk.FileChooserDialog(None, self, gtk.FILE_CHOOSER_ACTION_OPEN)
+        self.filedialog = myGtk.FileChooserDialog(None, self, Gtk.FileChooserAction.OPEN)
         self.filedialog.connect("response", self.filechanged)
         self.filedialog.set_local_only(False)
-        filechooserhbox = gtk.HBox()
-        self.filechooser = gtk.FileChooserButton(self.filedialog)
+        filechooserhbox = Gtk.HBox()
+        self.filechooser = Gtk.FileChooserButton(self.filedialog)
         self.filechooser.set_local_only(False)
-        filechooserhbox.pack_start(self.filechooser, True, True)
-        self.recentbutton = gtk.Button(_("Recent"))
+        filechooserhbox.pack_start(self.filechooser, True, True, 0)
+        self.recentbutton = Gtk.Button(_("Recent"))
         self.recentbutton.connect("clicked", self.show_recent)
-        filechooserhbox.pack_end(self.recentbutton, False, False)
+        filechooserhbox.pack_end(self.recentbutton, False, False, 0)
 
-        self.speedchooser = mygtk.TextScaleReset(gtk.Adjustment(1.00, 0.10, 4.0, 0.05, 0.05))
+        self.speedchooser = myGtk.TextScaleReset(Gtk.Adjustment.new(1.00, 0.10, 4.0, 0.05, 0.05, 0))
         self.speedchooser.scale.connect("value-changed", self.speedchanged)
         self.speedchooser.scale.connect("button-press-event", self.speedpress)
         self.speedchooser.scale.connect("button-release-event", self.speedrelease)
         self.speedchangeing = False
 
-        self.pitchchooser = mygtk.TextScaleReset(gtk.Adjustment(0.0, -24.0, 24.0, 1.0, 1.0, 1.0))
+        self.pitchchooser = myGtk.TextScaleReset(Gtk.Adjustment.new(0.0, -24.0, 24.0, 1.0, 1.0, 1.0, 0))
         self.pitchchooser.scale.connect("value-changed", self.pitchchanged)
 
-        self.pitchchooser_fine = mygtk.TextScaleReset(gtk.Adjustment(0.0, -50, 50, 1.0, 1.0, 1.0))
+        self.pitchchooser_fine = myGtk.TextScaleReset(Gtk.Adjustment.new(0.0, -50, 50, 1.0, 1.0, 1.0, 0))
         self.pitchchooser_fine.scale.connect("value-changed", self.pitchchanged)
 
-        self.positionchooser = mygtk.ClockScale(gtk.Adjustment(0.0, 0.0, 100.0))
+        self.positionchooser = myGtk.ClockScale(Gtk.Adjustment.new(0.0, 0.0, 100.0, 0, 0, 0))
         self.positionchooser.scale.connect("button-press-event", self.start_seeking)
         self.positionchooser.scale.connect("button-release-event", self.positionchanged)
         self.seeking = False
 
-        self.startchooser = mygtk.TextScaleWithCurPos(self.positionchooser, gtk.Adjustment(0.0, 0, 100.0))
+        self.startchooser = myGtk.TextScaleWithCurPos(self.positionchooser, Gtk.Adjustment.new(0.0, 0, 100.0))
         self.startchooser.scale.connect("button-press-event", self.start_seeking)
         self.startchooser.scale.connect("button-release-event", self.seeked)
-        self.startchooser.add_accelerator("clicked", self.accel_group, ord('['), gtk.gdk.CONTROL_MASK, ())
+        self.startchooser.add_accelerator("clicked", self.accel_group, ord('['), Gtk.gdk.CONTROL_MASK, ())
         self.startchooser.add_accelerator("clicked", self.accel_group, ord('['), 0, ())
 
-        self.endchooser = mygtk.TextScaleWithCurPos(self.positionchooser, gtk.Adjustment(1.0, 0, 100.0, 0.01, 0.01))
+        self.endchooser = myGtk.TextScaleWithCurPos(self.positionchooser, Gtk.Adjustment.new(1.0, 0, 100.0, 0.01, 0.01))
         self.endchooser.scale.connect("button-press-event", self.start_seeking)
         self.endchooser.scale.connect("button-release-event", self.seeked)
-        self.endchooser.add_accelerator("clicked", self.accel_group, ord(']'), gtk.gdk.CONTROL_MASK, ())
+        self.endchooser.add_accelerator("clicked", self.accel_group, ord(']'), Gtk.gdk.CONTROL_MASK, ())
         self.endchooser.add_accelerator("clicked", self.accel_group, ord(']'), 0, ())
 
-        self.vbox.pack_start(filechooserhbox)
-        self.vbox.pack_start(self.positionchooser)
-        self.vbox.pack_start(mygtk.form([(_(u"Speed (times)"), self.speedchooser),
+        self.vbox.pack_start(filechooserhbox, True, True, 0)
+        self.vbox.pack_start(self.positionchooser, True, True, 0)
+        self.vbox.pack_start(myGtk.form([(_(u"Speed (times)"), self.speedchooser),
             (_(u"Pitch (semitones)"), self.pitchchooser),
             (_(u"Fine Pitch (cents)"), self.pitchchooser_fine),
             (_(u"Start Position (seconds)"), self.startchooser),
             (_(u"End Position (seconds)"), self.endchooser)
-        ]), False, False)
+        ]), False, False, 0)
 
-        buttonbox = gtk.HButtonBox()
-        self.vbox.pack_end(buttonbox, False, False)
+        buttonbox = Gtk.HButtonBox()
+        self.vbox.pack_end(buttonbox, False, False, 0)
 
-        self.play_button = gtk.ToggleButton(gtk.STOCK_MEDIA_PLAY)
+        self.play_button = Gtk.ToggleButton(Gtk.STOCK_MEDIA_PLAY)
         self.play_button.connect("toggled", self.play)
         self.play_button.set_use_stock(True)
         self.play_button.set_sensitive(False)
@@ -168,31 +165,31 @@ class MainWindow(gtk.Window):
         # make SPACE a shortcut for play/pause (CTRL-SPC would be better?)
         self.play_button.add_accelerator("clicked", self.accel_group, ord(' '), 0, ())
 
-        self.back_button = gtk.Button(gtk.STOCK_MEDIA_REWIND)
+        self.back_button = Gtk.Button(Gtk.STOCK_MEDIA_REWIND)
         self.back_button.connect("clicked", self.back)
         self.back_button.set_use_stock(True)
         self.back_button.set_sensitive(False)
         buttonbox.pack_start(self.back_button)
 
-        self.volume_button = gtk.VolumeButton()
+        self.volume_button = Gtk.VolumeButton()
         self.volume_button.set_value(1.0)
-        self.volume_button.set_relief(gtk.RELIEF_NORMAL)
+        self.volume_button.set_relief(Gtk.RELIEF_NORMAL)
         self.volume_button.connect("value-changed", self.volumechanged)
         buttonbox.pack_start(self.volume_button)
 
-        self.save_as_button = gtk.Button(stock=gtk.STOCK_SAVE_AS)
+        self.save_as_button = Gtk.Button(stock=Gtk.STOCK_SAVE_AS)
         self.save_as_button.connect("clicked", self.save)
         self.save_as_button.set_sensitive(False)
         buttonbox.pack_start(self.save_as_button)
 
-        button_about = gtk.Button(stock=gtk.STOCK_ABOUT)
+        button_about = Gtk.Button(stock=Gtk.STOCK_ABOUT)
         button_about.connect("clicked", self.about)
         buttonbox.pack_end(button_about)
 
         self.connect("key-release-event", self.key_release)
 
         self.add(self.vbox)
-        self.connect("destroy", gtk.main_quit)
+        self.connect("destroy", Gtk.main_quit)
 
         self.config = config
         self.config_saving = False
@@ -215,7 +212,7 @@ class MainWindow(gtk.Window):
         self.pitchchooser_fine.set_value(cents)
 
     def add_recent(self, uri):
-        manager = gtk.recent_manager_get_default()
+        manager = Gtk.recent_manager_get_default()
         app_exec = "playitslowly \"%s\"" % uri
         mime_type, certain = gio.content_type_guess(uri, want_uncertain=True)
         if mime_type:
@@ -228,16 +225,16 @@ class MainWindow(gtk.Window):
 
 
     def show_recent(self, sender=None):
-        dialog = gtk.RecentChooserDialog(_("Recent Files"), self, None,
-                (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                 gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+        dialog = Gtk.RecentChooserDialog(_("Recent Files"), self, None,
+                (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                 Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
 
-        filter = gtk.RecentFilter()
+        filter = Gtk.RecentFilter()
         filter.set_name("playitslowly")
         filter.add_application("playitslowly")
         dialog.add_filter(filter)
 
-        filter2 = gtk.RecentFilter()
+        filter2 = Gtk.RecentFilter()
         filter2.set_name(_("All"))
         filter2.add_mime_type("audio/*")
         dialog.add_filter(filter2)
@@ -246,7 +243,7 @@ class MainWindow(gtk.Window):
 
         dialog.set_filter(filter)
 
-        if dialog.run() == gtk.RESPONSE_OK and dialog.get_current_item():
+        if dialog.run() == Gtk.ResponseType.OK and dialog.get_current_item():
             uri = dialog.get_current_item().get_uri()
             self.filedialog.set_uri(dialog.get_current_item().get_uri())
             self.filechanged(uri=uri)
@@ -309,7 +306,7 @@ class MainWindow(gtk.Window):
         self.config.save()
 
     def key_release(self, sender, event):
-        if not event.state & gtk.gdk.CONTROL_MASK:
+        if not event.state & Gtk.gdk.CONTROL_MASK:
             return
         try:
             val = int(chr(event.keyval))
@@ -322,16 +319,16 @@ class MainWindow(gtk.Window):
         self.save_config()
 
     def save(self, sender):
-        dialog = mygtk.FileChooserDialog(_(u"Save modified version as"),
-                self, gtk.FILE_CHOOSER_ACTION_SAVE)
+        dialog = myGtk.FileChooserDialog(_(u"Save modified version as"),
+                self, Gtk.FileChooserAction.SAVE)
         dialog.set_current_name("export.wav")
-        if dialog.run() == gtk.RESPONSE_OK:
+        if dialog.run() == Gtk.ResponseType.OK:
             self.pipeline.set_file(self.filedialog.get_uri())
             self.foo = self.pipeline.save_file(dialog.get_filename())
         dialog.destroy()
 
-    def filechanged(self, sender=None, response_id=gtk.RESPONSE_OK, uri=None):
-        if response_id != gtk.RESPONSE_OK:
+    def filechanged(self, sender=None, response_id=Gtk.ResponseType.OK, uri=None):
+        if response_id != Gtk.ResponseType.OK:
             return
 
         self.play_button.set_sensitive(True)
@@ -366,7 +363,7 @@ class MainWindow(gtk.Window):
         if self.positionchooser.get_value() != pos:
             self.positionchooser.set_value(pos)
         pos = self.pipeline.pipe_time(pos)
-        self.pipeline.playbin.seek_simple(TIME_FORMAT, gst.SEEK_FLAG_FLUSH, pos)
+        self.pipeline.playbin.seek_simple(TIME_FORMAT, Gst.SEEK_FLAG_FLUSH, pos)
 
     def speedchanged(self, *args):
         if self.speedchangeing:
@@ -384,7 +381,7 @@ class MainWindow(gtk.Window):
     def back(self, sender, amount=None):
         try:
             position, fmt = self.pipeline.playbin.query_position(TIME_FORMAT, None)
-        except gst.QueryError:
+        except Gst.QueryError:
             return
         if amount:
             t = self.pipeline.song_time(position)-amount
@@ -409,7 +406,7 @@ class MainWindow(gtk.Window):
         try:
             position, fmt = self.pipeline.playbin.query_position(TIME_FORMAT, None)
             duration, fmt = self.pipeline.playbin.query_duration(TIME_FORMAT, None)
-        except gst.QueryError:
+        except Gst.QueryError:
             return self.play_button.get_active()
         position = self.pipeline.song_time(position)
         duration = self.pipeline.song_time(duration)
@@ -440,9 +437,9 @@ class MainWindow(gtk.Window):
 
     def about(self, sender):
         """show an about dialog"""
-        about = gtk.AboutDialog()
+        about = Gtk.AboutDialog()
         about.set_transient_for(self)
-        about.set_logo(mygtk.iconfactory.get_icon("playitslowly", 128))
+        about.set_logo(myGtk.iconfactory.get_icon("playitslowly", 128))
         about.set_name(NAME)
         about.set_version(VERSION)
         about.set_authors(["Jonas Wagner", "Elias Dorneles"])
@@ -484,7 +481,7 @@ def main():
         config.load()
     except IOError:
         pass
-    sink = gst.parse_bin_from_description(sink, True)
+    sink = Gst.ElementFactory.make(sink, None)
     win = MainWindow(sink, config)
     if arguments:
         uri = arguments[0]
@@ -494,7 +491,7 @@ def main():
         win.filechooser.set_uri(uri)
         win.filechanged(uri=uri)
     win.show_all()
-    gtk.main()
+    Gtk.main()
 
 if __name__ == "__main__":
     main()

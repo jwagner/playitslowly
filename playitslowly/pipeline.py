@@ -1,33 +1,32 @@
 import sys
 
-import pygst
-pygst.require('0.10')
-
 argv = sys.argv
-# work around gstreamer parsing sys.argv!
+# work around Gstreamer parsing sys.argv!
 sys.argv = []
-import gst
+
+import gi
+gi.require_version('Gst', '1.0')
+
+from gi.repository import Gst
 sys.argv = argv
 
 from playitslowly import mygtk
 
 _ = lambda x: x
 
-class Pipeline(gst.Pipeline):
+class Pipeline(Gst.Pipeline):
     def __init__(self, sink):
-        gst.Pipeline.__init__(self)
-        try:
-            self.playbin = gst.element_factory_make("playbin2")
-        except gst.ElementNotFoundError:
-            self.playbin = gst.element_factory_make("playbin")
+        Gst.Pipeline.__init__(self)
+        self.playbin = Gst.ElementFactory.make("playbin2")
+        if self.playbin is None:
+            self.playbin = Gst.ElementFactory.make("playbin")
         self.add(self.playbin)
 
-        bin = gst.Bin("speed-bin")
-        try:
-            self.speedchanger = gst.element_factory_make("pitch")
-        except gst.ElementNotFoundError:
-            mygtk.show_error(_(u"You need to install the gstreamer soundtouch elements for "
-                    "play it slowly to. They are part of gstreamer-plugins-bad. Consult the "
+        bin = Gst.Bin()
+        self.speedchanger = Gst.ElementFactory.make("pitch")
+        if self.speedchanger is None:
+            mygtk.show_error(_(u"You need to install the Gstreamer soundtouch elements for "
+                    "play it slowly to. They are part of Gstreamer-plugins-bad. Consult the "
                     "README if you need more information.")).run()
             raise SystemExit()
 
@@ -36,25 +35,27 @@ class Pipeline(gst.Pipeline):
         self.audiosink = sink
 
         bin.add(self.audiosink)
-        convert = gst.element_factory_make("audioconvert")
+        convert = Gst.ElementFactory.make("audioconvert")
         bin.add(convert)
-        gst.element_link_many(self.speedchanger, convert)
-        gst.element_link_many(convert, self.audiosink)
-        sink_pad = gst.GhostPad("sink", self.speedchanger.get_pad("sink"))
+        self.speedchanger.link(convert)
+        convert.link(self.audiosink)
+        sink_pad = Gst.GhostPad.new("sink", self.speedchanger.get_static_pad("sink"))
         bin.add_pad(sink_pad)
         self.playbin.set_property("audio-sink", bin)
         bus = self.playbin.get_bus()
-        bus.add_signal_watch()
-        bus.connect("message", self.on_message)
+
+        # TODO: crashes
+        #bus.add_signal_watch()
+        #bus.connect("message", self.on_message)
 
         self.eos = lambda: None
 
     def on_message(self, bus, message):
         t = message.type
-        if t == gst.MESSAGE_EOS:
+        if t == Gst.MESSAGE_EOS:
             self.eos()
-        elif t == gst.MESSAGE_ERROR:
-            mygtk.show_error("gstreamer error: %s - %s" % message.parse_error())
+        elif t == Gst.MESSAGE_ERROR:
+            mygtk.show_error("Gstreamer error: %s - %s" % message.parse_error())
 
     def set_volume(self, volume):
         self.playbin.set_property("volume", volume)
@@ -77,34 +78,34 @@ class Pipeline(gst.Pipeline):
         self.speedchanger.set_property("pitch", pitch)
 
     def save_file(self, uri):
-        pipeline = gst.Pipeline()
+        pipeline = Gst.Pipeline()
 
-        playbin = gst.element_factory_make("playbin")
+        playbin = Gst.ElementFactory.make("playbin")
         pipeline.add(playbin)
         playbin.set_property("uri", self.playbin.get_property("uri"))
 
-        bin = gst.Bin("speed-bin")
+        bin = Gst.Bin("speed-bin")
 
-        speedchanger = gst.element_factory_make("pitch")
+        speedchanger = Gst.ElementFactory.make("pitch")
         speedchanger.set_property("tempo", self.speedchanger.get_property("tempo"))
         speedchanger.set_property("pitch", self.speedchanger.get_property("pitch"))
         bin.add(speedchanger)
 
-        audioconvert = gst.element_factory_make("audioconvert")
+        audioconvert = Gst.ElementFactory.make("audioconvert")
         bin.add(audioconvert)
 
-        encoder = gst.element_factory_make("wavenc")
+        encoder = Gst.ElementFactory.make("wavenc")
         bin.add(encoder)
 
-        filesink = gst.element_factory_make("filesink")
+        filesink = Gst.ElementFactory.make("filesink")
         bin.add(filesink)
         filesink.set_property("location", uri)
 
-        gst.element_link_many(speedchanger, audioconvert)
-        gst.element_link_many(audioconvert, encoder)
-        gst.element_link_many(encoder, filesink)
+        Gst.element_link_many(speedchanger, audioconvert)
+        Gst.element_link_many(audioconvert, encoder)
+        Gst.element_link_many(encoder, filesink)
 
-        sink_pad = gst.GhostPad("sink", speedchanger.get_pad("sink"))
+        sink_pad = Gst.GhostPad("sink", speedchanger.get_static_pad("sink"))
         bin.add_pad(sink_pad)
         playbin.set_property("audio-sink", bin)
 
@@ -112,7 +113,7 @@ class Pipeline(gst.Pipeline):
         bus.add_signal_watch()
         bus.connect("message", self.on_message)
 
-        pipeline.set_state(gst.STATE_PLAYING)
+        pipeline.set_state(Gst.STATE_PLAYING)
 
         return (pipeline, playbin)
 
@@ -120,12 +121,12 @@ class Pipeline(gst.Pipeline):
         self.playbin.set_property("uri", uri)
 
     def play(self):
-        self.set_state(gst.STATE_PLAYING)
+        self.set_state(Gst.STATE_PLAYING)
 
     def pause(self):
-        self.set_state(gst.STATE_PAUSED)
+        self.set_state(Gst.STATE_PAUSED)
 
     def reset(self):
-        self.set_state(gst.STATE_READY)
+        self.set_state(Gst.STATE_READY)
 
 
