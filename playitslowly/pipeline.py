@@ -17,9 +17,7 @@ _ = lambda x: x
 class Pipeline(Gst.Pipeline):
     def __init__(self, sink):
         Gst.Pipeline.__init__(self)
-        self.playbin = Gst.ElementFactory.make("playbin2")
-        if self.playbin is None:
-            self.playbin = Gst.ElementFactory.make("playbin")
+        self.playbin = Gst.ElementFactory.make("playbin")
         self.add(self.playbin)
 
         bin = Gst.Bin()
@@ -32,7 +30,8 @@ class Pipeline(Gst.Pipeline):
 
         bin.add(self.speedchanger)
 
-        self.audiosink = Gst.ElementFactory.make(sink, "sink")
+        self.audiosink = Gst.parse_launch(sink)
+        #self.audiosink = Gst.ElementFactory.make(sink, "sink")
 
         bin.add(self.audiosink)
         convert = Gst.ElementFactory.make("audioconvert")

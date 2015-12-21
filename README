@@ -34,10 +34,10 @@ Generic Installation
 ====================
 To install use you need to have the following libraries installed:
 
- * Python 2.6 (or 2.5 with simplejson installed)
- * PyGTK >= 2.10
- * PyGST >= 0.10
- * gstreamer >= 0.10 including the soundtouch/pitch element
+ * Python >= 2.6 (or 2.5 with simplejson installed)
+ * PyGI (Python GObject Introspection)
+ * GTK3
+ * gstreamer 1.0 including the soundtouch/pitch element
    (included in gstreamer-plugins-bad)
 
 Normally these libraries are already installed on your system.
@@ -49,25 +49,6 @@ you can just doubleclick ``install.sh`` and select run.
 
 Distribution Specific Installation Hints
 ========================================
-
-Arch Linux
-----------
-(this could be obsolete by now)
-
-Arch Linux is missing the pitch element, so you'll have to compile
-yourself::
-
-    pacman -S soundtouch
-    cd /tmp
-    wget gstreamer.freedesktop.org/src/gst-plugins-bad/gst-plugins-bad-0.10.9.tar.gz
-    tar xzf gst-plugins-bad-0.10.9.tar.gz
-    ./configure --prefix=/usr
-    cd ext/soundtouch
-    make && make install 
-
-Then test if it worked::
-
-    gst-inspect-0.10 soundtouch
 
 Fedora
 ------
@@ -94,7 +75,7 @@ or fill a pull request on github.
 
 License
 =======
-Copyright (C) 2009 - 2011  Jonas Wagner
+Copyright (C) 2009 - 2015  Jonas Wagner
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -123,4 +104,5 @@ Known Issues
 
 Contact
 =======
-You can reach my by e-mail: veers at gmx dot ch
+
+http://29a.ch/about

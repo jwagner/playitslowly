@@ -47,10 +47,10 @@ def ls_r(dir):
 kwargs = {
       'cmdclass': {'install': new_install},
       'name': 'playitslowly',
-      'version': "1.4.0",
+      'version': "1.5.0",
       'description': 'A tool to help you when transcribing music. It allows you to play a piece of music at a different speed or pitch.',
       'author': 'Jonas Wagner',
-      'author_email': 'veers@gmx.ch',
+      'author_email': 'jonas@29a.ch',
       'url': 'http://29a.ch/playitslowly/',
       'packages': ['playitslowly'],
       'scripts': ['bin/playitslowly'],
@@ -62,7 +62,7 @@ kwargs = {
           }},
       'data_files': ls_r('share'),
       'license': 'GNU GPL v3',
-      'classifiers': ['Development Status :: 4 - Beta',
+      'classifiers': [
         'Environment :: X11 Applications :: GTK',
         'Intended Audience :: End Users/Desktop',
         'License :: OSI Approved :: GNU General Public License (GPL)',
