@@ -198,8 +198,8 @@ def form(rows):
     for y, (text, widget) in enumerate(rows):
         label = Gtk.Label(label=text)
         label.set_alignment(0.0, 0.5)
-        table.attach(label, 0, 1, y, y+1, xoptions=Gtk.AttachOptions.SHRINK|Gtk.AttachOptions.FILL, xpadding=4)
-        table.attach(widget, 1, 2, y, y+1, xoptions=Gtk.AttachOptions.EXPAND|Gtk.AttachOptions.FILL, xpadding=4)
+        table.attach(label, 0, 1, y, y+1, xoptions=Gtk.AttachOptions.SHRINK|Gtk.AttachOptions.FILL, xpadding=4, ypadding=4)
+        table.attach(widget, 1, 2, y, y+1, xoptions=Gtk.AttachOptions.EXPAND|Gtk.AttachOptions.FILL, xpadding=4, ypadding=4)
     return table
 
 def make_table(widgets):
@@ -262,7 +262,7 @@ class ClockScale(Gtk.VBox):
         value = str(timedelta(seconds=value))[:7]
         if ms == '':
             ms = '000'
-        return '<span size="large" weight="bold">%s<span size="medium">.%s</span></span>' % (value, ms)
+        return '<span size="xx-large" weight="bold">%s<span size="medium">.%s</span></span>' % (value, ms)
 
 class TextScale(Gtk.HBox):
     format = "%.2f"
@@ -273,7 +273,7 @@ class TextScale(Gtk.HBox):
 
         self.entry = Gtk.Entry()
 
-        self.scale = Gtk.Scale.new(Gtk.Orientation.HORIZONTAL, *args)
+        self.scale = HScale(*args)
         self.scale.set_draw_value(False)
         self.set_value = self.scale.set_value
         self.get_value = self.scale.get_value
@@ -283,13 +283,14 @@ class TextScale(Gtk.HBox):
 
         #n = len(self.format % self.scale.get_adjustment().get_upper())
         self.entry.set_width_chars(self.size)
+        self.entry.set_max_width_chars(self.size)
 
         self.update_text()
         self.scale.connect("value-changed", self.update_text)
         self.entry.connect("changed", self.update_scale)
 
-        self.pack_start(self.scale, True, True, 0)
-        self.pack_start(self.entry, False, False, 0)
+        self.pack_start(self.scale, True, True, 4)
+        self.pack_start(self.entry, False, False, 4)
 
         self.entry.set_alignment(1.0)
 
@@ -305,11 +306,12 @@ class TextScale(Gtk.HBox):
             pass
         self.from_text = False
 
-# TODO: substitute for a decorator?
 class TextScaleReset(TextScale):
     def __init__(self, *args):
         TextScale.__init__(self, *args)
         self.reset_button = Gtk.Button.new_with_label(_('Reset'))
+        self.reset_button.set_size_request(64, -1)
+        add_style_class(self.reset_button, 'textScaleButton')
         self.reset_button.connect("clicked", self.reset_to_default)
         self.pack_start(self.reset_button, False, False, 0)
         self.reorder_child(self.reset_button, 1)
@@ -322,7 +324,8 @@ class TextScaleReset(TextScale):
 class TextScaleWithCurPos(TextScale):
     def __init__(self, slider, *args):
         TextScale.__init__(self, *args)
-        self.now_button = Gtk.Button(_('Now!'))
+        self.now_button = Gtk.Button(_('Now'))
+        self.now_button.set_size_request(64, -1)
         self.now_button.connect("clicked", self.update_to_current_position)
         self.pack_start(self.now_button, False, False, 0)
         self.reorder_child(self.now_button, 1)
@@ -386,6 +389,7 @@ def install_exception_hook(dialog=ExceptionDialog):
     old_hook = sys.excepthook
     def new_hook(etype, evalue, etb):
         if etype not in (KeyboardInterrupt, SystemExit):
+            print etype
             d = dialog(etype, evalue, etb)
             d.run()
             d.destroy()
@@ -396,6 +400,9 @@ def install_exception_hook(dialog=ExceptionDialog):
 def install():
     """install/register all hooks provided by myGtk"""
     install_exception_hook()
+
+def add_style_class(widget, name):
+    widget.get_style_context().add_class(name)
 
 if __name__ == "__main__":
     install_exception_hook()

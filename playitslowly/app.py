@@ -31,15 +31,18 @@ try:
 except ImportError:
     import simplejson as json
 
-from playitslowly.pipeline import Pipeline
+import gi
+gi.require_version('Gst', '1.0')
 
 from gi.repository import Gtk, GObject, Gst, Gio, Gdk
 
 GObject.threads_init()
 Gst.init(None)
 
+from playitslowly.pipeline import Pipeline
+
 # always enable button images
-#Gtk.Settings.get_default().set_long_property("Gtk-button-images", True, "main")
+Gtk.Settings.get_default().set_long_property("gtk-button-images", True, "main")
 
 from playitslowly import myGtk
 myGtk.install()
@@ -96,7 +99,7 @@ class MainWindow(Gtk.Window):
         except GObject.GError:
             print "could not load playitslowly icon"
 
-        self.set_default_size(500, 200)
+        self.set_default_size(600, 200)
         self.set_border_width(5)
 
         self.vbox = Gtk.VBox()
@@ -109,7 +112,7 @@ class MainWindow(Gtk.Window):
         self.filedialog.connect("response", self.filechanged)
         self.filedialog.set_local_only(False)
         filechooserhbox = Gtk.HBox()
-        self.filechooser = Gtk.FileChooserButton(self.filedialog)
+        self.filechooser = Gtk.FileChooserButton.new_with_dialog(self.filedialog)
         self.filechooser.set_local_only(False)
         filechooserhbox.pack_start(self.filechooser, True, True, 0)
         self.recentbutton = Gtk.Button(_("Recent"))
@@ -122,7 +125,8 @@ class MainWindow(Gtk.Window):
         self.speedchooser.scale.connect("button-release-event", self.speedrelease)
         self.speedchangeing = False
 
-        self.pitchchooser = myGtk.TextScaleReset(Gtk.Adjustment.new(0.0, -24.0, 24.0, 1.0, 1.0, 1.0))
+        pitch_adjustment = Gtk.Adjustment.new(0.0, -24.0, 24.0, 1.0, 1.0, 1.0)
+        self.pitchchooser = myGtk.TextScaleReset(pitch_adjustment)
         self.pitchchooser.scale.connect("value-changed", self.pitchchanged)
 
         self.pitchchooser_fine = myGtk.TextScaleReset(Gtk.Adjustment.new(0.0, -50, 50, 1.0, 1.0, 1.0))
@@ -147,7 +151,7 @@ class MainWindow(Gtk.Window):
 
         self.vbox.pack_start(filechooserhbox, False, False, 0)
         self.vbox.pack_start(self.positionchooser, True, True, 0)
-        self.vbox.pack_start(myGtk.form([(_(u"Speed (times, True, True, 0)"), self.speedchooser),
+        self.vbox.pack_start(myGtk.form([(_(u"Speed (times)"), self.speedchooser),
             (_(u"Pitch (semitones)"), self.pitchchooser),
             (_(u"Fine Pitch (cents)"), self.pitchchooser_fine),
             (_(u"Start Position (seconds)"), self.startchooser),
@@ -155,19 +159,19 @@ class MainWindow(Gtk.Window):
         ]), False, False, 0)
 
         buttonbox = Gtk.HButtonBox()
+        myGtk.add_style_class(buttonbox, 'buttonBox')
         self.vbox.pack_end(buttonbox, False, False, 0)
 
-        self.play_button = Gtk.ToggleButton(Gtk.STOCK_MEDIA_PLAY)
+        self.play_button = Gtk.ToggleButton(stock=Gtk.STOCK_MEDIA_PLAY)
         self.play_button.connect("toggled", self.play)
         self.play_button.set_use_stock(True)
         self.play_button.set_sensitive(False)
         buttonbox.pack_start(self.play_button, True, True, 0)
-        # make SPACE a shortcut for play/pause (CTRL-SPC would be better?)
         self.play_button.add_accelerator("clicked", self.accel_group, ord(' '), 0, Gtk.AccelFlags.VISIBLE)
 
-        self.back_button = Gtk.Button(Gtk.STOCK_MEDIA_REWIND)
+        self.back_button = Gtk.Button.new_from_stock(Gtk.STOCK_MEDIA_REWIND)
         self.back_button.connect("clicked", self.back)
-        self.back_button.set_use_stock(True)
+        #self.back_button.set_use_stock(True)
         self.back_button.set_sensitive(False)
         buttonbox.pack_start(self.back_button, True, True, 0)
 
@@ -177,12 +181,12 @@ class MainWindow(Gtk.Window):
         self.volume_button.connect("value-changed", self.volumechanged)
         buttonbox.pack_start(self.volume_button, True, True, 0)
 
-        self.save_as_button = Gtk.Button(stock=Gtk.STOCK_SAVE_AS)
+        self.save_as_button = Gtk.Button.new_from_stock(Gtk.STOCK_SAVE_AS)
         self.save_as_button.connect("clicked", self.save)
         self.save_as_button.set_sensitive(False)
         buttonbox.pack_start(self.save_as_button, True, True, 0)
 
-        button_about = Gtk.Button(stock=Gtk.STOCK_ABOUT)
+        button_about = Gtk.Button.new_from_stock(Gtk.STOCK_ABOUT)
         button_about.connect("clicked", self.about)
         buttonbox.pack_end(button_about, True, True, 0)
 
@@ -245,16 +249,19 @@ class MainWindow(Gtk.Window):
 
         if dialog.run() == Gtk.ResponseType.OK and dialog.get_current_item():
             uri = dialog.get_current_item().get_uri()
-            self.filedialog.set_uri(dialog.get_current_item().get_uri())
-            self.filechanged(uri=uri)
+            self.set_uri(uri)
         dialog.destroy()
+
+    def set_uri(self, uri):
+        self.filedialog.set_uri(uri)
+        self.filechooser.set_uri(uri)
+        self.filechanged(uri=uri)
 
     def load_config(self):
         self.config_saving = True # do not save while loading
         lastfile = self.config.get("lastfile")
         if lastfile:
-            self.filedialog.set_uri(lastfile)
-            self.filechanged(uri=lastfile)
+            self.set_uri(lastfile)
         self.config_saving = False
 
     def reset_settings(self):
@@ -405,12 +412,33 @@ class MainWindow(Gtk.Window):
         if self.seeking:
             return self.play_button.get_active()
 
-        position_query = self.pipeline.playbin.query_position(TIME_FORMAT)
-        duration_query = self.pipeline.playbin.query_duration(TIME_FORMAT)
-        if position_query is None or duration_query is None:
+        _, position = self.pipeline.playbin.query_position(TIME_FORMAT)
+        _, duration = self.pipeline.playbin.query_duration(TIME_FORMAT)
+        print position, duration
+        if position is None or duration is None:
             return self.play_button.get_active()
-        position = self.pipeline.song_time(position_query[0])
-        duration = self.pipeline.song_time(duration_query[0])
+        position = position
+        duration = duration
+        position = self.pipeline.song_time(position)
+        duration = self.pipeline.song_time(duration)
+
+        if self.positionchooser.get_adjustment().get_property("upper") != duration:
+            self.positionchooser.set_range(0.0, duration)
+            self.save_config()
+
+        end_adjustment = self.endchooser.get_adjustment()
+        delta = end_adjustment.get_value() - end_adjustment.get_upper()
+
+        if delta <= -duration:
+            delta = 0
+
+        self.startchooser.set_range(0.0, duration)
+        self.endchooser.set_range(0.0, duration)
+        self.endchooser.set_value(duration+delta)
+
+        self.positionchooser.set_value(position)
+        self.positionchooser.queue_draw()
+
         start = self.startchooser.get_value()
         end = self.endchooser.get_value()
 
@@ -418,22 +446,11 @@ class MainWindow(Gtk.Window):
             self.play_button.set_active(False)
             return False
 
+        print "position", position, end
         if position >= end or position < start:
             self.seek(start+0.01)
             return True
 
-        if self.positionchooser.get_adjustment().get_property("upper") != duration:
-            self.positionchooser.set_range(0.0, duration)
-            self.save_config()
-        end = self.endchooser.get_adjustment()
-        delta = end.get_value() - end.get_upper()
-        if delta <= -duration:
-            delta = 0
-        self.startchooser.set_range(0.0, duration)
-        self.endchooser.set_range(0.0, duration)
-        self.endchooser.set_value(duration+delta)
-        self.positionchooser.set_value(position)
-        self.positionchooser.queue_draw()
         return self.play_button.get_active()
 
     def about(self, sender):
@@ -445,11 +462,11 @@ class MainWindow(Gtk.Window):
         about.set_version(VERSION)
         about.set_authors(["Jonas Wagner", "Elias Dorneles"])
         about.set_translator_credits(_("translator-credits"))
-        about.set_copyright("Copyright (c) 2009 - 2011 Jonas Wagner")
+        about.set_copyright("Copyright (c) 2009 - 2015 Jonas Wagner")
         about.set_website(WEBSITE)
         about.set_website_label(WEBSITE)
         about.set_license("""
-Copyright (C) 2009 - 2011 Jonas Wagner
+Copyright (C) 2009 - 2015 Jonas Wagner
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 3 of the License, or
@@ -462,6 +479,14 @@ GNU General Public License for more details.
 """)
         about.run()
         about.destroy()
+
+css = """
+.buttonBox GtkButton GtkLabel { padding-left: 4px; }
+"""
+
+
+
+
 
 def main():
     sink = "autoaudiosink"
@@ -482,15 +507,24 @@ def main():
         config.load()
     except IOError:
         pass
-    #sink = Gst.ElementFactory.make(sink, "sink")
+
+    style_provider = Gtk.CssProvider()
+
+    style_provider.load_from_data(css)
+
+    Gtk.StyleContext.add_provider_for_screen(
+        Gdk.Screen.get_default(), 
+        style_provider,     
+        Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+    )
+
     win = MainWindow(sink, config)
+
     if arguments:
         uri = arguments[0]
         if not uri.startswith("file://"):
             uri = "file://" + os.path.abspath(uri)
-
-        win.filechooser.set_uri(uri)
-        win.filechanged(uri=uri)
+        win.set_uri(uri)
     win.show_all()
     Gtk.main()
 
