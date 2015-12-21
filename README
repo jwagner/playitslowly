@@ -34,7 +34,7 @@ Generic Installation
 ====================
 To install use you need to have the following libraries installed:
 
- * Python >= 2.6 (or 2.5 with simplejson installed)
+ * Python 3.4 or newer
  * PyGI (Python GObject Introspection)
  * GTK3
  * gstreamer 1.0 including the soundtouch/pitch element

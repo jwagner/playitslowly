@@ -1,11 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # vim: set fileencoding=utf-8 :
-from __future__ import with_statement
 """
 Author: Jonas Wagner
 
-Play it slowly
-Copyright (C) 2009 - 2012 Jonas Wagner
+Play it Slowly
+Copyright (C) 2009 - 2015 Jonas Wagner
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -50,8 +49,8 @@ myGtk.install()
 
 _ = lambda s: s # may be add gettext later
 
-NAME = u"Play it slowly"
-VERSION = "1.4.0"
+NAME = "Play it slowly"
+VERSION = "1.5.0"
 WEBSITE = "http://29a.ch/playitslowly/"
 
 if sys.platform == "win32":
@@ -84,7 +83,7 @@ class Config(dict):
         self.update(data)
 
     def save(self):
-        with open(self.path, "wb") as f:
+        with open(self.path, "w") as f:
             json.dump(self, f)
 
 
@@ -97,7 +96,7 @@ class MainWindow(Gtk.Window):
         try:
             self.set_icon(myGtk.iconfactory.get_icon("playitslowly", 128))
         except GObject.GError:
-            print "could not load playitslowly icon"
+            print("could not load playitslowly icon")
 
         self.set_default_size(600, 200)
         self.set_border_width(5)
@@ -151,11 +150,11 @@ class MainWindow(Gtk.Window):
 
         self.vbox.pack_start(filechooserhbox, False, False, 0)
         self.vbox.pack_start(self.positionchooser, True, True, 0)
-        self.vbox.pack_start(myGtk.form([(_(u"Speed (times)"), self.speedchooser),
-            (_(u"Pitch (semitones)"), self.pitchchooser),
-            (_(u"Fine Pitch (cents)"), self.pitchchooser_fine),
-            (_(u"Start Position (seconds)"), self.startchooser),
-            (_(u"End Position (seconds)"), self.endchooser)
+        self.vbox.pack_start(myGtk.form([(_("Speed (times)"), self.speedchooser),
+            (_("Pitch (semitones)"), self.pitchchooser),
+            (_("Fine Pitch (cents)"), self.pitchchooser_fine),
+            (_("Start Position (seconds)"), self.startchooser),
+            (_("End Position (seconds)"), self.endchooser)
         ]), False, False, 0)
 
         buttonbox = Gtk.HButtonBox()
@@ -225,7 +224,7 @@ class MainWindow(Gtk.Window):
             recent_data.app_exec = "playitslowly"
             recent_data.mime_type = mime_type
             manager.add_full(uri, recent_data)
-            print app_exec, mime_type
+            print(app_exec, mime_type)
 
 
     def show_recent(self, sender=None):
@@ -249,10 +248,13 @@ class MainWindow(Gtk.Window):
 
         if dialog.run() == Gtk.ResponseType.OK and dialog.get_current_item():
             uri = dialog.get_current_item().get_uri()
+            if isinstance(uri, bytes):
+                uri = uri.decode('utf-8')
             self.set_uri(uri)
         dialog.destroy()
 
     def set_uri(self, uri):
+        print(repr(uri))
         self.filedialog.set_uri(uri)
         self.filechooser.set_uri(uri)
         self.filechanged(uri=uri)
@@ -274,10 +276,11 @@ class MainWindow(Gtk.Window):
         self.endchooser.set_value(1.0)
 
     def load_file_settings(self, filename):
+        print("load_file_settings", filename)
         self.add_recent(filename)
         if not self.config or not filename in self.config["files"]:
             self.reset_settings()
-            self.pipeline.set_file(self.filedialog.get_uri())
+            self.pipeline.set_file(filename)
             self.pipeline.pause()
             GObject.timeout_add(100, self.update_position)
             return
@@ -326,7 +329,7 @@ class MainWindow(Gtk.Window):
         self.save_config()
 
     def save(self, sender):
-        dialog = myGtk.FileChooserDialog(_(u"Save modified version as"),
+        dialog = myGtk.FileChooserDialog(_("Save modified version as"),
                 self, Gtk.FileChooserAction.SAVE)
         dialog.set_current_name("export.wav")
         if dialog.run() == Gtk.ResponseType.OK:
@@ -335,7 +338,7 @@ class MainWindow(Gtk.Window):
         dialog.destroy()
 
     def filechanged(self, sender=None, response_id=Gtk.ResponseType.OK, uri=None):
-        print "file changed", uri
+        print("file changed", uri)
         if response_id != Gtk.ResponseType.OK:
             return
 
@@ -387,9 +390,8 @@ class MainWindow(Gtk.Window):
         self.save_config()
 
     def back(self, sender, amount=None):
-        try:
-            position, fmt = self.pipeline.playbin.query_position(TIME_FORMAT, None)
-        except Gst.QueryError:
+        position, fmt = self.pipeline.playbin.query_position(TIME_FORMAT)
+        if position is None:
             return
         if amount:
             t = self.pipeline.song_time(position)-amount
@@ -414,7 +416,6 @@ class MainWindow(Gtk.Window):
 
         _, position = self.pipeline.playbin.query_position(TIME_FORMAT)
         _, duration = self.pipeline.playbin.query_duration(TIME_FORMAT)
-        print position, duration
         if position is None or duration is None:
             return self.play_button.get_active()
         position = position
@@ -446,7 +447,6 @@ class MainWindow(Gtk.Window):
             self.play_button.set_active(False)
             return False
 
-        print "position", position, end
         if position >= end or position < start:
             self.seek(start+0.01)
             return True
@@ -480,7 +480,7 @@ GNU General Public License for more details.
         about.run()
         about.destroy()
 
-css = """
+css = b"""
 .buttonBox GtkButton GtkLabel { padding-left: 4px; }
 """
 
@@ -495,12 +495,12 @@ def main():
     options, arguments = getopt.getopt(sys.argv[1:], "h", ["help", "sink="])
     for option, argument in options:
         if option in ("-h", "--help"):
-            print "Usage: playitslowly [OPTIONS]... [FILE]"
-            print "Options:"
-            print '--sink=sink      specify gstreamer sink for playback'
+            print("Usage: playitslowly [OPTIONS]... [FILE]")
+            print("Options:")
+            print('--sink=sink      specify gstreamer sink for playback')
             sys.exit()
         elif option == "--sink":
-            print "sink", argument
+            print("sink", argument)
             sink = argument
     config = Config(CONFIG_PATH)
     try:

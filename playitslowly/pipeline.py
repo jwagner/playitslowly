@@ -1,3 +1,23 @@
+"""
+Author: Jonas Wagner
+
+Play it Slowly
+Copyright (C) 2009 - 2015 Jonas Wagner
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 import sys
 
 argv = sys.argv
@@ -10,7 +30,7 @@ gi.require_version('Gst', '1.0')
 from gi.repository import Gst
 sys.argv = argv
 
-from playitslowly import mygtk
+from playitslowly import myGtk
 
 _ = lambda x: x
 
@@ -23,7 +43,7 @@ class Pipeline(Gst.Pipeline):
         bin = Gst.Bin()
         self.speedchanger = Gst.ElementFactory.make("pitch")
         if self.speedchanger is None:
-            mygtk.show_error(_(u"You need to install the Gstreamer soundtouch elements for "
+            mygtk.show_error(_("You need to install the Gstreamer soundtouch elements for "
                     "play it slowly to. They are part of Gstreamer-plugins-bad. Consult the "
                     "README if you need more information.")).run()
             raise SystemExit()
@@ -81,7 +101,7 @@ class Pipeline(Gst.Pipeline):
         pipeline.add(playbin)
         playbin.set_property("uri", self.playbin.get_property("uri"))
 
-        bin = Gst.Bin("speed-bin")
+        bin = Gst.Bin()
 
         speedchanger = Gst.ElementFactory.make("pitch")
         speedchanger.set_property("tempo", self.speedchanger.get_property("tempo"))
@@ -98,17 +118,13 @@ class Pipeline(Gst.Pipeline):
         bin.add(filesink)
         filesink.set_property("location", uri)
 
-        Gst.element_link_many(speedchanger, audioconvert)
-        Gst.element_link_many(audioconvert, encoder)
-        Gst.element_link_many(encoder, filesink)
+        speedchanger.link(audioconvert)
+        audioconvert.link(encoder)
+        encoder.link(filesink)
 
-        sink_pad = Gst.GhostPad("sink", speedchanger.get_static_pad("sink"))
+        sink_pad = Gst.GhostPad.new("sink", speedchanger.get_static_pad("sink"))
         bin.add_pad(sink_pad)
         playbin.set_property("audio-sink", bin)
-
-        bus = playbin.get_bus()
-        bus.add_signal_watch()
-        bus.connect("message", self.on_message)
 
         pipeline.set_state(Gst.State.PLAYING)
 

@@ -1,8 +1,8 @@
 """
 Author: Jonas Wagner
 
-Play it slowly
-Copyright (C) 2015 Jonas Wagner
+Play it Slowly
+Copyright (C) 2009 - 2015 Jonas Wagner
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ from gi.repository import Gtk, GObject
 import math
 import sys
 from datetime import timedelta
+import collections
 
 _ = lambda s: s
 
@@ -31,14 +32,14 @@ class FileChooserDialog(Gtk.FileChooserDialog):
     def __init__(self, title=None, parent=None, action=None):
         if action == Gtk.FileChooserAction.SAVE:
             buttons = (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE ,Gtk.ResponseType.OK)
-            title = title or _(u"Save File")
+            title = title or _("Save File")
         else:
             if action == Gtk.FileChooserAction.SELECT_FOLDER:
-                title = title or _(u"Select Folder")
+                title = title or _("Select Folder")
             elif action == Gtk.FileChooserAction.CREATE_FOLDER:
-                title = title or _(u"Create Folder")
+                title = title or _("Create Folder")
             else:
-                title = title or _(u"Open a File")
+                title = title or _("Open a File")
             buttons = (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN ,Gtk.ResponseType.OK)
         Gtk.FileChooserDialog.__init__(self, title, parent, action, buttons)
 
@@ -56,7 +57,7 @@ class IconFactory:
             try:
                 self.cache[(name, size)] = self.icon_theme.load_icon(name,
                         size, 0)
-            except GObject.GError, e:
+            except GObject.GError as e:
                 #logger.exception("Unable to load icon %r probably your "
                 #        "icon theme isn't conforming to the icon naming "
                 #        "convention. You might want to try the tango icon "
@@ -93,7 +94,7 @@ def scrolled(widget, shadow=Gtk.ShadowType.NONE):
 
 def make_table(widgets):
     """return a Gtk.Table containing all the widgets"""
-    columns = max(map(len, widgets))
+    columns = max(list(map(len, widgets)))
     table = Gtk.Table(len(widgets), columns, False)
     for y, row in enumerate(widgets):
         for x, widget in enumerate(row):
@@ -185,7 +186,7 @@ def make_menu(entries, menu):
             else:
                 item = Gtk.MenuItem(key)
         if sub:
-            if callable(sub):
+            if isinstance(sub, collections.Callable):
                 item.connect("activate", sub)
             else:
                 submenu = Gtk.Menu()
@@ -204,7 +205,7 @@ def form(rows):
 
 def make_table(widgets):
     """return a Gtk.Table containing all the widgets"""
-    columns = max(map(len, widgets))
+    columns = max(list(map(len, widgets)))
     table = Gtk.Table(len(widgets), columns, False)
     for y, row in enumerate(widgets):
         for x, widget in enumerate(row):
@@ -316,7 +317,7 @@ class TextScaleReset(TextScale):
         self.pack_start(self.reset_button, False, False, 0)
         self.reorder_child(self.reset_button, 1)
         self.default_value = self.get_value()
-	self.add_accelerator = self.reset_button.add_accelerator
+        self.add_accelerator = self.reset_button.add_accelerator
     def reset_to_default(self, sender=None):
         self.set_value(self.default_value)
 
@@ -330,7 +331,7 @@ class TextScaleWithCurPos(TextScale):
         self.pack_start(self.now_button, False, False, 0)
         self.reorder_child(self.now_button, 1)
         self.slider = slider
-	self.add_accelerator = self.now_button.add_accelerator
+        self.add_accelerator = self.now_button.add_accelerator
     def update_to_current_position(self, sender=None):
         self.set_value(self.slider.get_value())
 
@@ -340,14 +341,14 @@ class ListStore(Gtk.ListStore):
             try:
                 return self.index(name)
             except ValueError:
-                raise AttributeError, name
+                raise AttributeError(name)
 
         def ordered(self, valuedict):
             return [valuedict.get(key) for key in self]
 
     def __init__(self, **kwargs):
-        GObject.GObject.__init__(self, *kwargs.values())
-        self.columns = ListStore.Columns(kwargs.keys())
+        GObject.GObject.__init__(self, *list(kwargs.values()))
+        self.columns = ListStore.Columns(list(kwargs.keys()))
 
     def serialize(self):
         data = []
@@ -389,7 +390,7 @@ def install_exception_hook(dialog=ExceptionDialog):
     old_hook = sys.excepthook
     def new_hook(etype, evalue, etb):
         if etype not in (KeyboardInterrupt, SystemExit):
-            print etype
+            print(etype)
             d = dialog(etype, evalue, etb)
             d.run()
             d.destroy()
