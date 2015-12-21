@@ -3,6 +3,7 @@ Version=1.0
 Name=Play it Slowly
 GenericName=Play it Slowly
 Comment=A tool to play back a piece of music at a different speed or pitch
+Comment[fr]=Un outil pour lire un morceau de musique à différentes vitesses ou tonalités
 Icon=playitslowly
 Type=Application
 Categories=Application;AudioVideo;
