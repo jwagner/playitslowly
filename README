@@ -1,10 +1,10 @@
 =====================
-Play it slowly Manual
+Play it Slowly Manual
 =====================
 
 About
 =====
-'Play it slowly' is a tool to help you when practicing or
+'Play it Slowly' is a tool to help you when practicing or
 transcribing music. It allows you to play a piece of music
 at a different speed or pitch.
 
@@ -47,22 +47,6 @@ superuser (root). If you are using a gnome based system like Ubuntu
 you can just doubleclick ``install.sh`` and select run.
 
 
-Distribution Specific Installation Hints
-========================================
-
-Fedora
-------
-Install gstreamer-plugins-bad-extras
-
-Mandriva
---------
-Install gstreamer0.10-soundtouch.
-
-Ubuntu
-------
-It should work out of the box!
-
-
 Hacking
 =======
 The source code of play it slowly is hosted on github:
@@ -96,7 +80,6 @@ Bugreports / Questions
 If you encounter any bugs or have suggestions or just want to
 thank me - I would like to hear about it!
 
-
 Known Issues
 ============
 * None
@@ -104,5 +87,4 @@ Known Issues
 
 Contact
 =======
-
 http://29a.ch/about
