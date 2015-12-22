@@ -1,3 +1,9 @@
+playitslowly 1.5
+================
+ * Update to Python3, GTK3 and GStreamer 1.0
+ * Minor design cleanup
+ * Fixed a bug where the file chooser would not show the currently selected file
+
 playitslowly 1.4
 ================
  * Added now and reset buttons

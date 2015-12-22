@@ -5,6 +5,7 @@ import os
 from distutils.core import setup
 from distutils.command.install import install, write_file
 from distutils.command.install_egg_info import to_filename, safe_name
+from functools import reduce
 
 class new_install(install):
     def initialize_options(self):
@@ -27,13 +28,11 @@ class new_install(install):
         outputs = self.get_outputs()
         if self.root:               # strip any package prefix
             root_len = len(self.root)
-            for counter in xrange(len(outputs)):
+            for counter in range(len(outputs)):
                 outputs[counter] = outputs[counter][root_len:]
         self.execute(write_file,
                 (install_info, outputs),
                 "writing install-info to '%s'" % install_info)
-
-
 
 def ls_r(dir):
     def do_reduce(a, b):

@@ -49,7 +49,7 @@ myGtk.install()
 
 _ = lambda s: s # may be add gettext later
 
-NAME = "Play it slowly"
+NAME = "Play it Slowly"
 VERSION = "1.5.0"
 WEBSITE = "http://29a.ch/playitslowly/"
 
@@ -459,6 +459,7 @@ class MainWindow(Gtk.Window):
         about.set_transient_for(self)
         about.set_logo(myGtk.iconfactory.get_icon("playitslowly", 128))
         about.set_name(NAME)
+        about.set_program_name(NAME)
         about.set_version(VERSION)
         about.set_authors(["Jonas Wagner", "Elias Dorneles"])
         about.set_translator_credits(_("translator-credits"))
