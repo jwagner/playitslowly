@@ -398,7 +398,7 @@ class MainWindow(Gtk.Window):
             if t < 0:
                 t = 0
         else:
-            t = 0
+            t = self.startchooser.get_value()
         self.seek(t)
 
     def play(self, sender):
