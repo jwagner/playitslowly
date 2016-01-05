@@ -43,7 +43,7 @@ class Pipeline(Gst.Pipeline):
         bin = Gst.Bin()
         self.speedchanger = Gst.ElementFactory.make("pitch")
         if self.speedchanger is None:
-            mygtk.show_error(_("You need to install the Gstreamer soundtouch elements for "
+            myGtk.show_error(_("You need to install the Gstreamer soundtouch elements for "
                     "play it slowly to. They are part of Gstreamer-plugins-bad. Consult the "
                     "README if you need more information.")).run()
             raise SystemExit()
@@ -72,7 +72,7 @@ class Pipeline(Gst.Pipeline):
         if t == Gst.MESSAGE_EOS:
             self.eos()
         elif t == Gst.MESSAGE_ERROR:
-            mygtk.show_error("Gstreamer error: %s - %s" % message.parse_error())
+            myGtk.show_error("Gstreamer error: %s - %s" % message.parse_error())
 
     def set_volume(self, volume):
         self.playbin.set_property("volume", volume)
