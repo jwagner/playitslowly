@@ -284,7 +284,8 @@ class TextScale(Gtk.HBox):
 
         #n = len(self.format % self.scale.get_adjustment().get_upper())
         self.entry.set_width_chars(self.size)
-        self.entry.set_max_width_chars(self.size)
+        if hasattr(self.entry, 'set_max_width_chars'):
+            self.entry.set_max_width_chars(self.size)
 
         self.update_text()
         self.scale.connect("value-changed", self.update_text)
