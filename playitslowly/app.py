@@ -50,7 +50,7 @@ myGtk.install()
 _ = lambda s: s # may be add gettext later
 
 NAME = "Play it Slowly"
-VERSION = "1.5.0"
+VERSION = "1.5.1"
 WEBSITE = "http://29a.ch/playitslowly/"
 
 if sys.platform == "win32":

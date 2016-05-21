@@ -1,3 +1,7 @@
+playitslowly 1.5.1
+==================
+* Fix config loading.
+
 playitslowly 1.5
 ================
  * Update to Python3, GTK3 and GStreamer 1.0
