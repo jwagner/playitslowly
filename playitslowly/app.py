@@ -74,16 +74,17 @@ class Config(dict):
         self.path = path
 
     def load(self):
-        with open(self.path, "rb") as f:
+        with open(self.path, encoding="utf-8") as f:
             try:
                 data = json.load(f)
-            except Exception:
+            except Exception as e:
+                print("Error loading config: %s", e)
                 data = {}
         self.clear()
         self.update(data)
 
     def save(self):
-        with open(self.path, "w") as f:
+        with open(self.path, mode="w", encoding="utf-8") as f:
             json.dump(self, f)
 
 
