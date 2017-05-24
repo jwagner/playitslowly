@@ -95,7 +95,7 @@ class MainWindow(Gtk.Window):
         self.set_title(NAME)
 
         try:
-            self.set_icon(myGtk.iconfactory.get_icon("playitslowly", 128))
+            self.set_icon(myGtk.iconfactory.get_icon("ch.x29a.playitslowly", 128))
         except GObject.GError:
             print("could not load playitslowly icon")
 
@@ -458,7 +458,7 @@ class MainWindow(Gtk.Window):
         """show an about dialog"""
         about = Gtk.AboutDialog()
         about.set_transient_for(self)
-        about.set_logo(myGtk.iconfactory.get_icon("playitslowly", 128))
+        about.set_logo(myGtk.iconfactory.get_icon("ch.x29a.playitslowly", 128))
         about.set_name(NAME)
         about.set_program_name(NAME)
         about.set_version(VERSION)
