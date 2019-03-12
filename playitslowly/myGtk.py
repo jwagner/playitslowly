@@ -242,6 +242,9 @@ class ClockScale(Gtk.VBox):
     def __init__(self, *args):
         GObject.GObject.__init__(self)
         self.clocklabel = Gtk.Label()
+
+        self.range_max = 0.0
+
         # slider
         self.scale = HScale(*args)
         self.scale.set_draw_value(False)
@@ -249,21 +252,37 @@ class ClockScale(Gtk.VBox):
         self.get_value = self.scale.get_value
         self.get_adjustment = self.scale.get_adjustment
         self.set_adjustment = self.scale.set_adjustment
-        self.set_range = self.scale.set_range
 
         self.update_clock()
         self.scale.connect("value-changed", self.update_clock)
 
         self.pack_start(self.clocklabel, True, True, 0)
         self.pack_start(self.scale, True, True, 0)
+
     def update_clock(self, sender=None):
-        self.clocklabel.set_markup(self.format(self.get_value()))
-    def format(self, value):
-        ms = str(timedelta(seconds=value))[8:11]
-        value = str(timedelta(seconds=value))[:7]
+        self.clocklabel.set_markup(self.format(self.get_value(),
+                                               self.range_max))
+
+    def format(self, value, max):
+        hms, ms = self.split_time(value)
+        max_hms, max_ms = self.split_time(max)
+        format_str = '<span size="xx-large" weight="bold">{}<span size="medium">.{}</span></span>' + \
+            '<span size="xx-large" > / </span>' + \
+            '<span size="xx-large" weight="bold">{}<span size="medium">.{}</span></span>'
+        return format_str.format(hms, ms, max_hms, max_ms)
+
+    def set_range(self, min, max):
+        "Set range for scale."
+        self.range_max = max
+        self.scale.set_range(min, max)
+
+    def split_time(self, time):
+        """Split time into two parts, one is h:mm:ss and the other millisecond"""
+        hms = str(timedelta(seconds=time))[:7]
+        ms = str(timedelta(seconds=time))[8:11]
         if ms == '':
             ms = '000'
-        return '<span size="xx-large" weight="bold">%s<span size="medium">.%s</span></span>' % (value, ms)
+        return hms, ms
 
 class TextScale(Gtk.HBox):
     format = "%.2f"
