@@ -9,6 +9,7 @@
     </p>
   </description>
   <url type="homepage">https://29a.ch/playitslowly/</url>
+  <content_rating type="oars-1.1" />
   <screenshots>
     <screenshot type="default">https://29a.ch/playitslowly/screenshot.png</screenshot>
   </screenshots>
