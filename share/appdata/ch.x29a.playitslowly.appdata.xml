@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <application>
-  <id type="desktop">ch.x29a.playitslowly.desktop</id>
+  <id type="desktop">ch.x29a.playitslowly</id>
+  <launchable type="desktop-id">ch.x29a.playitslowly.desktop</launchable>
   <name>Play it Slowly</name>
   <summary>Play music at a different speed</summary>
   <description>
