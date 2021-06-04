@@ -297,7 +297,7 @@ class MainWindow(Gtk.Window):
         self.pipeline.set_file("file://" + self.path_combined_audio)
 
     def add_bpm(self, button):
-        if os.path.isfile(self.path_combined_audio.replace("%20", " ")) == False:
+        if os.path.isfile(self.path_combined_audio) == False:
             self.bpm_calculation()
             self.save_config()
         else:
