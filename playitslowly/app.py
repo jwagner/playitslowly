@@ -19,6 +19,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import madmom 
+import librosa
+import numpy as np
+import soundfile as sf
+from pydub import AudioSegment
+import io
+from os.path import expanduser
+import scipy.io.wavfile
 
 import getopt
 import mimetypes
@@ -32,6 +40,7 @@ except ImportError:
 
 import gi
 gi.require_version('Gst', '1.0')
+gi.require_version('Gtk', '3.0')
 
 from gi.repository import Gtk, GObject, Gst, Gio, Gdk
 
@@ -93,9 +102,8 @@ class MainWindow(Gtk.Window):
         Gtk.Window.__init__(self, Gtk.WindowType.TOPLEVEL)
 
         self.set_title(NAME)
-
         try:
-            self.set_icon(myGtk.iconfactory.get_icon("ch.x29a.playitslowly", 128))
+            self.set_icon(myGtk.iconfactory.get_icon("playitslowly", 128))
         except GObject.GError:
             print("could not load playitslowly icon")
 
@@ -162,6 +170,10 @@ class MainWindow(Gtk.Window):
         myGtk.add_style_class(buttonbox, 'buttonBox')
         self.vbox.pack_end(buttonbox, False, False, 0)
 
+        self.bpm_button = Gtk.CheckButton(label="BPM")
+        self.bpm_button.connect("toggled", self.add_bpm)
+        buttonbox.pack_start(self.bpm_button, False, False, 0)
+
         self.play_button = Gtk.ToggleButton(stock=Gtk.STOCK_MEDIA_PLAY)
         self.play_button.connect("toggled", self.play)
         self.play_button.set_use_stock(True)
@@ -174,6 +186,12 @@ class MainWindow(Gtk.Window):
         #self.back_button.set_use_stock(True)
         self.back_button.set_sensitive(False)
         buttonbox.pack_start(self.back_button, True, True, 0)
+
+        #self.bpm_button = Gtk.Button.new_from_stock("BPM")
+        #self.bpm_button.connect("clicked", self.add_bpm)
+        ##self.bpm_button.set_use_stock(True)
+        #self.bpm_button.set_sensitive(False)
+        #buttonbox.pack_start(self.bpm_button, True, True, 0)
 
         self.volume_button = Gtk.VolumeButton()
         self.volume_button.set_value(1.0)
@@ -227,6 +245,39 @@ class MainWindow(Gtk.Window):
             manager.add_full(uri, recent_data)
             print(app_exec, mime_type)
 
+    def add_bpm(self, button):
+        str_song = self.filedialog.get_uri()[7:]
+        str_song = str_song.replace("%20", " ")
+
+        # read audio file 
+        song = AudioSegment.from_file(str_song)
+        sound = song.set_frame_rate(librosa.get_samplerate(str_song))
+        channel_sounds = song.split_to_mono()
+        samples = [s.get_array_of_samples() for s in channel_sounds]
+
+        x = np.array(samples).T.astype(np.float32)
+        x /= np.iinfo(samples[0].typecode).max
+
+        sr = librosa.get_samplerate(str_song) 
+
+        # dbn tracker
+        proc = madmom.features.beats.DBNBeatTrackingProcessor(fps=100)
+        act = madmom.features.beats.RNNBeatProcessor()(str_song)
+
+        # write clicks over track
+        beat_times = proc(act)
+        clicks = librosa.clicks(beat_times, sr=sr, length=len(x))
+
+        wav_io = io.BytesIO()
+        scipy.io.wavfile.write(wav_io, sr, clicks)
+        wav_io.seek(0)
+        clicks_audio = AudioSegment.from_wav(wav_io)
+
+        combined = song.overlay(clicks_audio)
+        path_combined_audio = expanduser("~") + "/combined.wav"
+        combined.export(path_combined_audio, format='wav')
+
+        self.filedialog.set_uri("file://" + path_combined_audio)
 
     def show_recent(self, sender=None):
         dialog = Gtk.RecentChooserDialog(_("Recent Files"), self, None,
@@ -347,6 +398,7 @@ class MainWindow(Gtk.Window):
         self.back_button.set_sensitive(True)
         self.save_as_button.set_sensitive(True)
         self.play_button.set_active(False)
+        self.bpm_button.set_active(False)
 
         self.pipeline.reset()
         self.seek(0)
@@ -458,7 +510,7 @@ class MainWindow(Gtk.Window):
         """show an about dialog"""
         about = Gtk.AboutDialog()
         about.set_transient_for(self)
-        about.set_logo(myGtk.iconfactory.get_icon("ch.x29a.playitslowly", 128))
+        about.set_logo(myGtk.iconfactory.get_icon("playitslowly", 128))
         about.set_name(NAME)
         about.set_program_name(NAME)
         about.set_version(VERSION)
