@@ -211,12 +211,12 @@ class MainWindow(Gtk.Window):
         self.add(self.vbox)
         self.connect("destroy", Gtk.main_quit)
 
-        self.original_song_str = self.filedialog.get_uri()
-        self.path_combined_audio = " "
-
         self.config = config
         self.config_saving = False
         self.load_config() 
+
+        self.path_combined_audio = " "
+        self.original_song_str = self.filedialog.get_uri() 
 
     def speedpress(self, *args):
         self.speedchangeing = True
@@ -288,29 +288,36 @@ class MainWindow(Gtk.Window):
         clicks_audio = AudioSegment.from_wav(wav_io)
 
         combined = song.overlay(clicks_audio)
-        self.path_combined_audio = expanduser("~") + "/" + os.path.basename(self.original_song_str) 
+        self.path_combined_audio = expanduser("~") + "/" + os.path.basename(self.original_song_str.replace("%20", "_")) 
         combined.export(self.path_combined_audio, format='wav')
 
         #self.filedialog.set_uri("file://" + self.path_combined_audio)
         self.pipeline.pause()
         self.pipeline.reset()
         self.pipeline.set_file("file://" + self.path_combined_audio)
+        GObject.timeout_add(100, self.update_position)
 
     def add_bpm(self, button):
-        if os.path.isfile(self.path_combined_audio) == False:
+        if os.path.isfile(expanduser("~") + "/" + os.path.basename(self.filedialog.get_uri().replace("%20","_"))) == False:
             self.bpm_calculation()
             self.save_config()
         else:
+            self.path_combined_audio = expanduser("~") + "/" + os.path.basename(self.filedialog.get_uri().replace("%20", "_"))
             if self.bpm_button.get_active() == False:
                 #self.filedialog.set_uri(self.original_song_str)
                 #self.pipeline.pause()
                 self.pipeline.reset()
-                self.pipeline.set_file(self.original_song_str)
+                #self.pipeline.set_file(self.original_song_str)
+                self.filedialog.set_uri(self.original_song_str)
+                GObject.timeout_add(100, self.update_position)
             else:
                 #self.filedialog.set_uri("file://" + self.path_combined_audio)
                 #self.pipeline.pause()
                 self.pipeline.reset()
-                self.pipeline.set_file("file://" + self.path_combined_audio)
+                set_string = "file://" + self.path_combined_audio
+                #self.pipeline.set_file(set_string)
+                self.filedialog.set_uri(set_string)
+                GObject.timeout_add(100, self.update_position)
 
         #self.pipeline.set_file("file://" + self.path_combined_audio)
         #self.bpm_calculation()
@@ -441,6 +448,8 @@ class MainWindow(Gtk.Window):
         self.pipeline.reset()
         self.seek(0)
         self.save_config()
+
+        self.original_song_str = self.filedialog.get_uri() 
 
         if uri:
             self.load_file_settings(uri)
