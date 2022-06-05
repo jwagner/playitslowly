@@ -1,3 +1,10 @@
+.. warning::
+  **This project is currently unmaintained**.
+  It has been superceded by `timestretch player <https://29a.ch/timestretch/>`_.
+  *Play it slowly* will likely not work on modern linux distributions anymore.
+  If someone wants to continue working on *play it slowly* I'd be glad to hand over maintainership. 
+
+
 =====================
 Play it Slowly Manual
 =====================
