@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <application>
-  <id type="desktop">ch.x29a.playitslowly.desktop</id>
+  <id type="desktop">ch.x29a.playitslowly</id>
+  <launchable type="desktop-id">ch.x29a.playitslowly.desktop</launchable>
+  <provides>
+    <id>playitslowly.desktop</id>
+  </provides>
   <name>Play it Slowly</name>
   <summary>Play music at a different speed</summary>
   <description>
@@ -9,9 +13,36 @@
     </p>
   </description>
   <url type="homepage">https://29a.ch/playitslowly/</url>
+  <content_rating type="oars-1.1" />
   <screenshots>
     <screenshot type="default">https://29a.ch/playitslowly/screenshot.png</screenshot>
   </screenshots>
   <project_license>GPL-3.0+</project_license>
   <metadata_license>CC0-1.0</metadata_license>
+  <releases>
+    <release version="1.5.1" date="2016-05-21">
+      <description>
+        <p>This is a bug fix release:</p>
+        <ul>
+          <li>Fixed config loading</li>
+        </ul>
+      </description>
+    </release>
+    <release version="1.5.0" date="2016-05-21">
+      <description>
+        <p>This is a major release:</p>
+        <ul>
+          <li>Updated to Python3, GTK3 and GStreamer 1.0</li>
+          <li>Minor design cleanup</li>
+          <li>Fixed a bug where the file chooser would not show the currently selected file</li>
+        </ul>
+      </description>
+    </release>
+    <release version="1.4.0" date="2011-07-03" />
+    <release version="1.3.1" date="2010-12-08" />
+    <release version="1.3.0" date="2010-07-04" />
+    <release version="1.2.0" date="2009-05-23" />
+    <release version="1.1.0" date="2009-01-08" />
+    <release version="1.0.0" date="2008-12-11" />
+  </releases>
 </application>
